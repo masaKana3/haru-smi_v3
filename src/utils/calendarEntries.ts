@@ -35,6 +35,7 @@ export function buildCalendarEntries(records: DailyRecord[]): Record<string, Cal
       date: rec.date,
       severityColor: severity ? SEVERITY_COLORS[severity] : undefined,
       hasBleeding: hasBleeding(rec.answers),
+      checked: true,
     };
   });
   return map;

@@ -5,6 +5,7 @@ export type CalendarEntry = {
   date: string;
   severityColor?: string;
   hasBleeding?: boolean;
+  checked?: boolean;
 };
 
 type Props = {
@@ -185,8 +186,8 @@ export default function CalendarGrid({
               <div className={`text-sm font-medium ${isToday ? 'text-brandAccent font-bold' : ''}`}>{day.date.getDate()}</div>
 
               {/* 3. 体調の可視化（ドット） */}
-              {hasRecord && entry.severityColor && (
-                <div className={`absolute bottom-2 w-2 h-2 rounded-full ${entry.severityColor}`} />
+              {entry?.checked && (
+                <div className="absolute bottom-2 w-2 h-2 rounded-full bg-brandAccent" />
               )}
 
               {isStartDay && (
