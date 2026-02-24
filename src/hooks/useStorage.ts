@@ -1,0 +1,1030 @@
+import { useCallback, useMemo } from "react";
+import { DailyRecord } from "../types/daily";
+import { PeriodRecord } from "../types/period";
+import { SMIConvertedAnswer, SMIRecord } from "../types/smi";
+import { CommunityPost, CommunityTopic, Comment } from "../types/community";
+import { UserProfile, UserAuth } from "../types/user";
+import { supabase } from "../lib/supabaseClient";
+import { Json } from "../types/supabase";
+
+const POSTS_KEY = "haru_posts";
+const COMMENTS_KEY = "haru_comments";
+const REPORTS_KEY = "haru_reports";
+const LIKES_KEY = "haru_likes";
+
+// UUID形式（ハイフンを含む）かどうかを判定する補助関数
+const isUUID = (id: string | null | undefined): id is string => {
+  return typeof id === 'string' && id.includes('-');
+};
+
+async function hashPassword(password: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+const cleanAvatarUrl = (avatarUrl: string | undefined | null): string | undefined => {
+  if (avatarUrl && avatarUrl.startsWith('http')) {
+    return 'azarashi';
+  }
+  return avatarUrl || undefined;
+};
+
+export function useStorage() {
+  const isAdmin = useCallback(async (): Promise<boolean> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    
+    const adminEmail = 'admin@test.jp';
+    const adminId = import.meta.env.VITE_ADMIN_USER_ID;
+
+    // Check email OR a specific admin User ID from environment variables
+    return user.email === adminEmail || (adminId && user.id === adminId);
+  }, []);
+
+  // SMIデータの保存 (Cache only) - この関数はSupabaseに移行したため処理を空にする
+  const saveSMIResult = useCallback(async (total: number, answers: SMIConvertedAnswer[]) => {
+    // localStorage.setItem("haru_smi_total", String(total));
+    // localStorage.setItem("haru_smi_answers", JSON.stringify(answers));
+    // localStorage.setItem("haru_smi_done", "true");
+  }, []);
+
+  // SMIデータの読み込み
+  const loadSMIResult = useCallback(async () => {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
+    if (user) {
+      const { data, error } = await (supabase.from("smi_results") as any)
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && data) {
+        const row = data as any;
+        return {
+          done: true,
+          total: row.total_score ?? null,
+          answers: (row.answers as unknown) as SMIConvertedAnswer[],
+        };
+      }
+    }
+    
+    // ユーザーに紐づくデータがない場合はデフォルト値を返す
+    return { done: false, total: null, answers: null };
+  }, []);
+
+  // SMI履歴の保存
+  const saveSMIHistory = useCallback(async (total: number, answers: SMIConvertedAnswer[]) => {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
+    if (user) {
+      const { error } = await (supabase.from("smi_results") as any).insert({
+        user_id: user.id,
+        total_score: total,
+        answers: (answers as unknown) as Json,
+      });
+      if (error) console.error("Failed to save SMI history to Supabase:", error);
+    }
+  }, []);
+
+  // SMI履歴の読み込み
+  const loadSMIHistory = useCallback(async (): Promise<SMIRecord[]> => {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
+    if (user) {
+      const { data } = await (supabase.from("smi_results") as any)
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      
+      if (data) {
+        return (data as any[]).map((d) => ({
+          date: d.created_at!,
+          total: d.total_score ?? 0,
+          answers: (d.answers as unknown) as SMIConvertedAnswer[],
+        }));
+      }
+    }
+
+    return [];
+  }, []);
+
+  // 日々の記録の保存
+  const saveDailyRecord = useCallback(async (data: DailyRecord) => {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
+    if (user) {
+      const { error } = await (supabase.from("daily_checks") as any)
+        .upsert({
+          user_id: user.id,
+          date: data.date,
+          answers: (data.answers as unknown) as Json,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,date' });
+      
+      if (error) console.error("Failed to save daily record to Supabase:", error);
+    }
+  }, []);
+
+  // 日々の記録の読み込み（単日）
+  const loadDailyRecord = useCallback(async (date: string): Promise<DailyRecord | null> => {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
+    if (user) {
+      const { data, error } = await (supabase.from("daily_checks") as any)
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", date)
+        .maybeSingle();
+      
+      if (!error && data) {
+        const row = data as any;
+        return {
+          date: row.date,
+          answers: (row.answers as unknown) as DailyRecord['answers'],
+          // items はdaily_checksテーブルにないので、ここで返すのはやめる
+          // items: row.items
+        };
+      }
+    }
+    return null;
+  }, []);
+
+  // 日々の記録の読み込み（全履歴）
+  const loadAllDailyRecords = useCallback(async (): Promise<DailyRecord[]> => {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
+    if (user) {
+      const { data } = await (supabase.from("daily_checks") as any)
+        .select("*")
+        .eq("user_id", user.id)
+        .order("date", { ascending: false });
+      
+      if (data) {
+        return (data as any[]).map((d) => ({
+          date: d.date,
+          answers: (d.answers as unknown) as DailyRecord['answers'],
+        }));
+      }
+    }
+    return [];
+  }, []);
+
+  // 生理記録の読み込み（全件）
+  const loadAllPeriods = useCallback(async (): Promise<PeriodRecord[]> => {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
+    if (!user) return [];
+    
+    const { data, error } = await supabase
+      .from("periods")
+      .select("start, end")
+      .eq("user_id", user.id)
+      .order("start", { ascending: false });
+
+    if (error) {
+      console.error("Failed to load periods from Supabase:", error);
+      return [];
+    }
+    return (data || []) as PeriodRecord[];
+  }, []);
+
+  // 生理記録の保存
+  const savePeriods = useCallback(async (periods: PeriodRecord[]) => {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
+    if (!user) return;
+
+    // 既存のデータをすべて削除
+    const { error: deleteError } = await supabase
+      .from("periods")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (deleteError) {
+      console.error("Failed to delete old periods from Supabase:", deleteError);
+      return;
+    }
+
+    // 新しいデータを挿入
+    if (periods.length > 0) {
+      const dataToInsert = periods.map(p => ({
+        user_id: user.id,
+        start: p.start,
+        end: p.end,
+      }));
+      const { error: insertError } = await supabase.from("periods").insert(dataToInsert);
+      if (insertError) {
+        console.error("Failed to save periods to Supabase:", insertError);
+      }
+    }
+  }, []);
+
+  // 生理記録の読み込み（最新）
+  const getLatestPeriod = useCallback(async (): Promise<PeriodRecord | null> => {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from("periods")
+      .select("start, end")
+      .eq("user_id", user.id)
+      .order("start", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (error) {
+      console.error("Failed to load latest period from Supabase:", error);
+      return null;
+    }
+    return data as PeriodRecord | null;
+  }, []);
+
+  // === Community Board (Supabase) ===
+
+  // トピック（お題）の一覧を取得
+  const listCommunityTopics = useCallback(async (): Promise<CommunityTopic[]> => {
+    const { data, error } = await supabase
+      .from("community_topics")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Error fetching community topics:", error);
+      return [];
+    }
+    return data || [];
+  }, []);
+
+  // 直近のトピックを3件取得
+  const loadRecentTopics = useCallback(async (): Promise<CommunityTopic[]> => {
+    const { data, error } = await supabase
+      .from("community_topics")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(3);
+    if (error) {
+      console.error("Error fetching recent community topics:", error);
+      return [];
+    }
+    return data || [];
+  }, []);
+
+  // 管理者がトピック（お題）を作成
+  const createCommunityTopic = useCallback(async (title: string): Promise<CommunityTopic | null> => {
+    const { data, error } = await supabase
+      .from("community_topics")
+      .insert({ title })
+      .select()
+      .single();
+    if (error) {
+      console.error("Error creating community topic:", error);
+      if (error.code === '42501') { // permission_denied
+        alert(`トピック作成の権限がありません。\nエラー: ${error.message}`);
+      } else {
+        alert(`トピック作成中にエラーが発生しました。\nエラー: ${error.message}`);
+      }
+      return null;
+    }
+    return data;
+  }, []);
+
+  // 特定のトピックに紐づく投稿の一覧を取得
+  const listCommunityPosts = useCallback(async (topicId: string): Promise<CommunityPost[]> => {
+    const { data, error } = await supabase
+      .from("community_posts")
+      .select('*, profiles!community_posts_profile_id_fkey(nickname, avatar_url)')
+      .eq("topic_id", topicId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching community posts:", error);
+      alert(`投稿の読み込みに失敗しました: ${error.message}`);
+      return [];
+    }
+    
+    // 取得したデータをCommunityPost型に整形
+    return (data || []).map(post => {
+      const profileData = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles;
+      return {
+        ...post,
+        // rename avatar_url to avatarUrl to match UserProfile type
+        profiles: profileData ? {
+          nickname: profileData.nickname,
+          avatarUrl: cleanAvatarUrl(profileData.avatar_url),
+        } : undefined,
+      };
+    });
+  }, []);
+
+  // ユーザーが投稿を作成または更新
+  const createCommunityPost = useCallback(async (postData: {
+      id?: string;
+      type: 'diary' | 'thread' | 'official';
+      title?: string;
+      content: string;
+      is_public: boolean;
+      topicId?: string;
+  }): Promise<CommunityPost | null> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error("User not logged in");
+      alert("ログインが必要です。");
+      return null;
+    }
+
+    const { id, type, title, content, is_public, topicId } = postData;
+
+    const dataToUpsert = {
+      id: id,
+      user_id: user.id, // profile_idからuser_idに戻す
+      topic_id: topicId,
+      title: title,
+      content: content,
+      type: type,
+      is_public: is_public,
+    };
+
+    const { data, error } = await supabase
+      .from('community_posts')
+      .upsert(dataToUpsert)
+      .select('*, profiles!community_posts_profile_id_fkey(*)')
+      .single();
+
+    if (error) {
+      console.error("Error saving post:", error);
+      alert(`投稿の保存に失敗しました: ${error.message}`);
+      return null;
+    }
+
+    if (!data) return null;
+
+    // 取得したデータをCommunityPost型に整形
+    const profileData = Array.isArray(data.profiles) ? data.profiles[0] : data.profiles;
+    const result: CommunityPost = {
+      ...data,
+      profiles: profileData ? {
+        nickname: profileData.nickname,
+        avatarUrl: cleanAvatarUrl(profileData.avatar_url),
+      } : undefined,
+    };
+    return result;
+  }, []);
+
+  // タイムライン用のコミュニティ投稿一覧を取得
+  const loadCommunityPosts = useCallback(async (): Promise<CommunityPost[]> => {
+    const { data, error } = await supabase
+      .from("community_posts")
+      .select('*, profiles!community_posts_profile_id_fkey(nickname, avatar_url), community_topics(title), community_likes(count), community_comments(count)')
+      .order("created_at", { ascending: false })
+      .limit(6); // 表示件数を6件に制限
+
+    if (error) {
+      console.error("Error fetching timeline posts:", error);
+      return [];
+    }
+    
+    // 取得したデータをCommunityPost型に整形
+    return (data || []).map(post => {
+      const profileData = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles;
+      // Supabase returns the count in an array of objects, e.g., [{ count: 5 }]
+      const likes_count = post.community_likes?.[0]?.count || 0;
+      const comments_count = post.community_comments?.[0]?.count || 0;
+
+      return {
+        ...post,
+        profiles: profileData ? {
+          nickname: profileData.nickname,
+          avatarUrl: cleanAvatarUrl(profileData.avatar_url),
+        } : undefined,
+        likes_count,
+        comments_count,
+      };
+    });
+  }, []);
+
+  const loadDiaryPosts = useCallback(async (userId: string): Promise<CommunityPost[]> => {
+    const { data, error } = await supabase
+      .from("community_posts")
+      .select('*, profiles!community_posts_profile_id_fkey(nickname, avatar_url)')
+      .is('topic_id', null) // 日記は topic_id が NULL と想定
+      .or(`user_id.eq.${userId},is_public.eq.true`) // 自分の投稿、または公開設定の投稿
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching diary posts:", error);
+      return [];
+    }
+    
+    return (data || []).map(post => {
+      const profileData = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles;
+      return {
+        ...post,
+        profiles: profileData ? {
+          nickname: profileData.nickname,
+          avatarUrl: cleanAvatarUrl(profileData.avatar_url),
+        } : undefined,
+      };
+    });
+  }, []);
+
+  // IDで単一の投稿を取得
+  const getPostById = useCallback(async (postId: string): Promise<CommunityPost | null> => {
+    const { data, error } = await supabase
+      .from("community_posts")
+      .select('*, profiles!community_posts_profile_id_fkey(nickname, avatar_url)')
+      .eq('id', postId)
+      .single();
+
+    if (error) {
+      console.error(`Error fetching post with id ${postId}:`, error);
+      return null;
+    }
+
+    const post = data;
+    if (!post) return null;
+    
+    const profileData = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles;
+    return {
+      ...post,
+      profiles: profileData ? {
+        nickname: profileData.nickname,
+        avatarUrl: cleanAvatarUrl(profileData.avatar_url),
+      } : undefined,
+    };
+  }, []);
+
+  const getPostLikes = useCallback(async (postId: string) => {
+    const { count, error } = await supabase
+      .from('community_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId);
+
+    if (error) {
+      console.error('Error getting post like count:', error);
+      return { count: 0, userHasLiked: false };
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { count: count || 0, userHasLiked: false };
+    }
+
+    const { data: like, error: likeError } = await supabase
+      .from('community_likes')
+      .select('user_id')
+      .eq('post_id', postId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+      
+    if (likeError) {
+      console.error('Error checking if user liked post:', likeError);
+    }
+
+    return { count: count || 0, userHasLiked: !!like };
+  }, []);
+
+  const togglePostLike = useCallback(async (postId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert('ログインが必要です。');
+      return;
+    }
+
+    const { data: existingLike, error: fetchError } = await supabase
+      .from('community_likes')
+      .select('id')
+      .eq('post_id', postId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('Error checking for existing like:', fetchError);
+      return;
+    }
+
+    if (existingLike) {
+      // Unlike
+      const { error: deleteError } = await supabase
+        .from('community_likes')
+        .delete()
+        .eq('id', existingLike.id);
+      if (deleteError) {
+        console.error('Error unliking post:', deleteError);
+      }
+    } else {
+      // Like
+      const { error: insertError } = await supabase
+        .from('community_likes')
+        .insert({ post_id: postId, user_id: user.id });
+      if (insertError) {
+        console.error('Error liking post:', insertError);
+      }
+    }
+  }, []);
+
+  // 特定のユーザーの投稿をすべて取得
+  const loadUserPosts = useCallback(async (userId: string): Promise<CommunityPost[]> => {
+    const { data, error } = await supabase
+      .from("community_posts")
+      .select('*, profiles!community_posts_profile_id_fkey(nickname, avatar_url)')
+      .eq('user_id', userId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching user posts:", error);
+      return [];
+    }
+    
+    return (data || []).map(post => {
+      const profileData = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles;
+      return {
+        ...post,
+        profiles: profileData ? {
+          nickname: profileData.nickname,
+          avatarUrl: cleanAvatarUrl(profileData.avatar_url),
+        } : undefined,
+      };
+    });
+  }, []);
+
+  // 特定のユーザーの公開投稿のみを取得
+  const loadUserPublicPosts = useCallback(async (userId: string): Promise<CommunityPost[]> => {
+    const { data, error } = await supabase
+      .from("community_posts")
+      .select('*, profiles!community_posts_profile_id_fkey(nickname, avatar_url)')
+      .eq('user_id', userId)
+      .eq('is_public', true)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching user's public posts:", error);
+      return [];
+    }
+    
+    return (data || []).map(post => {
+      const profileData = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles;
+      return {
+        ...post,
+        profiles: profileData ? {
+          nickname: profileData.nickname,
+          avatarUrl: cleanAvatarUrl(profileData.avatar_url),
+        } : undefined,
+      };
+    });
+  }, []);
+
+  // いいねした投稿の一覧を取得
+  const listLikedPosts = useCallback(async (userId: string): Promise<CommunityPost[]> => {
+    const { data: likedPosts, error } = await supabase
+      .from('community_likes')
+      .select('community_posts(*, profiles!community_posts_profile_id_fkey(nickname, avatar_url))')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("Error fetching liked posts:", error);
+      return [];
+    }
+
+    return (likedPosts || []).map((p: any) => {
+      const post = p.community_posts;
+      if (!post) return null; // Should not happen if DB is consistent
+      
+      const profileData = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles;
+      return {
+        ...post,
+        profiles: profileData ? {
+          nickname: profileData.nickname,
+          avatarUrl: cleanAvatarUrl(profileData.avatar_url),
+        } : undefined,
+      };
+    }).filter((p): p is CommunityPost => p !== null);
+  }, []);
+
+  // 特定ユーザーの全投稿の獲得いいね総数を取得
+  const getUserTotalLikes = useCallback(async (userId: string): Promise<number> => {
+    // 1. ユーザーのすべての投稿IDを取得
+    const { data: posts, error: postsError } = await supabase
+      .from('community_posts')
+      .select('id')
+      .eq('user_id', userId);
+
+    if (postsError) {
+      console.error("Error fetching user posts for likes count:", postsError);
+      return 0;
+    }
+
+    if (!posts || posts.length === 0) {
+      return 0;
+    }
+
+    const postIds = posts.map(p => p.id);
+
+    // 2. 投稿IDリストに合致するいいねの総数をカウント
+    const { count, error: countError } = await supabase
+      .from('community_likes')
+      .select('*', { count: 'exact', head: true })
+      .in('post_id', postIds);
+    
+    if (countError) {
+      console.error("Error counting total likes:", countError);
+      return 0;
+    }
+
+    return count || 0;
+  }, []);
+
+
+
+  // コメントを読み込む
+  const loadCommentsByPostId = useCallback(async (postId: string): Promise<Comment[]> => {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data: comments, error } = await supabase
+      .from('community_comments')
+      .select('*, profiles!community_comments_user_id_fkey_new(*)')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching comments:', error);
+      return [];
+    }
+    if (!comments) {
+      return [];
+    }
+
+    const commentIds = comments.map(c => c.id);
+
+    const { data: allLikes, error: likesError } = await supabase
+      .from('community_comment_likes')
+      .select('comment_id, user_id')
+      .in('comment_id', commentIds);
+
+    if (likesError) {
+      console.error('Error fetching comment likes:', likesError);
+      // いいねがなくても処理を続行
+    }
+
+    const likesByCommentId = new Map<string, string[]>();
+    if (allLikes) {
+      for (const like of allLikes) {
+        if (!likesByCommentId.has(like.comment_id)) {
+          likesByCommentId.set(like.comment_id, []);
+        }
+        likesByCommentId.get(like.comment_id)!.push(like.user_id);
+      }
+    }
+
+    return comments.map(comment => {
+      const profileData = Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles;
+      const likes = likesByCommentId.get(comment.id) || [];
+      return {
+        ...comment,
+        profiles: profileData ? {
+          nickname: profileData.nickname,
+          avatarUrl: cleanAvatarUrl(profileData.avatar_url),
+        } : undefined,
+        likes_count: likes.length,
+        userHasLiked: user ? likes.includes(user.id) : false,
+      };
+    });
+  }, []);
+
+  // コメントを保存する
+  const saveComment = useCallback(async (comment: { postId: string; text: string; authorId: string; }): Promise<Comment | null> => {
+    const { data, error } = await supabase.from('community_comments').insert({
+      post_id: comment.postId,
+      user_id: comment.authorId,
+      content: comment.text,
+      text: comment.text,
+    }).select('*, profiles!community_comments_user_id_fkey_new(*)').single();
+
+    if (error) {
+      console.error('Error saving comment:', error);
+      return null;
+    }
+    
+    if (!data) return null;
+
+    const profileData = Array.isArray(data.profiles) ? data.profiles[0] : data.profiles;
+    return {
+      ...data,
+      profiles: profileData ? {
+        nickname: profileData.nickname,
+        avatarUrl: cleanAvatarUrl(profileData.avatar_url),
+      } : undefined,
+    };
+  }, []);
+
+  const toggleCommentLike = useCallback(async (commentId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert('ログインが必要です。');
+      return;
+    }
+
+    const { data: existingLike, error: fetchError } = await supabase
+      .from('community_comment_likes')
+      .select('id')
+      .eq('comment_id', commentId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('Error checking for existing comment like:', fetchError);
+      return;
+    }
+
+    if (existingLike) {
+      // Unlike
+      const { error: deleteError } = await supabase
+        .from('community_comment_likes')
+        .delete()
+        .eq('id', existingLike.id);
+      if (deleteError) {
+        console.error('Error unliking comment:', deleteError);
+      }
+    } else {
+      // Like
+      const { error: insertError } = await supabase
+        .from('community_comment_likes')
+        .insert({ comment_id: commentId, user_id: user.id });
+      if (insertError) {
+        console.error('Error liking comment:', insertError);
+      }
+    }
+  }, []);
+
+  // 投稿を削除する
+  const deletePost = useCallback(async (postId: string): Promise<boolean> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert("ログインが必要です。");
+      return false;
+    }
+
+    const postToDelete = await getPostById(postId);
+    if (!postToDelete) {
+      alert("削除対象の投稿が見つかりません。");
+      return false;
+    }
+
+    const isAuthor = postToDelete.user_id === user.id;
+    const isUserAdmin = await isAdmin();
+
+    if (!isAuthor && !isUserAdmin) {
+      console.error("User does not have permission to delete this post.");
+      alert("この投稿を削除する権限がありません。");
+      return false;
+    }
+
+    // First delete comments and likes associated with the post
+    // Note: If RLS or other issues prevent these deletes, they might fail silently.
+    // For a more robust solution, these should also be checked.
+    await supabase.from('community_comments').delete().eq('post_id', postId);
+    await supabase.from('community_likes').delete().eq('post_id', postId);
+    
+    // Then delete the post itself and select the deleted row to confirm.
+    const { data, error } = await supabase
+      .from('community_posts')
+      .delete()
+      .eq('id', postId)
+      .select();
+
+    if (error) {
+      console.error('Error deleting post:', error);
+      alert(`投稿の削除中にデータベースエラーが発生しました: ${error.message}`);
+      return false;
+    }
+
+    // Check if any row was actually deleted. If not, it's likely an RLS issue.
+    if (!data || data.length === 0) {
+      console.warn(`Post deletion query for post ID ${postId} returned no deleted rows. This may be due to RLS policies or the post being already deleted.`);
+      alert('投稿の削除に失敗しました。権限がないか、投稿がすでに削除されている可能性があります。');
+      return false;
+    }
+
+    console.log(`Successfully deleted ${data.length} post(s).`);
+    return true; // Deletion successful
+  }, [isAdmin, getPostById]);
+
+  // コメントを削除する
+  const deleteComment = useCallback(async (commentId: string) => {
+    const { error } = await supabase.from('community_comments').delete().eq('id', commentId);
+    if (error) console.error('Error deleting comment:', error);
+  }, []);
+
+  // 通報を保存する（未実装プレースホルダー）
+  const saveReport = useCallback(async (report: { targetId: string; targetType: 'post' | 'comment'; reason: string; reporterId: string; }) => {
+    console.log(`Reporting ${report.targetType} ${report.targetId} by ${report.reporterId} for ${report.reason}. Functionality not implemented.`);
+    // Here you would insert into a 'reports' table
+    return Promise.resolve();
+  }, []);
+
+  // === User Profile ===
+
+  const saveProfile = useCallback(async (profile: UserProfile, userId?: string) => {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
+    const targetId = userId || user?.id || localStorage.getItem("haru_current_user_id");
+    if (!targetId) return;
+
+    const key = `haru_profile_${targetId}`;
+    localStorage.setItem(key, JSON.stringify(profile));
+
+    if (user && user.id === targetId) {
+      const { error } = await (supabase.from("profiles") as any).upsert({
+        id: targetId,
+        nickname: profile.nickname,
+        bio: profile.bio,
+        avatar_url: profile.avatarUrl ?? null,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) console.error("Failed to save profile to Supabase:", error);
+    }
+  }, []);
+
+  const loadProfile = useCallback(async (userId?: string): Promise<UserProfile | null> => {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
+    let targetId = userId || user?.id || localStorage.getItem("haru_current_user_id");
+    
+    // Supabaseリクエスト前のUUIDチェック
+    if (isUUID(targetId)) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", targetId)
+          .maybeSingle();
+        
+        if (!error && data) {
+          const row = data as any;
+          return {
+            nickname: row.nickname || "",
+            bio: row.bio || "",
+            avatarUrl: cleanAvatarUrl(row.avatar_url),
+          } as UserProfile;
+        }
+      }
+    }
+
+    if (targetId) {
+      const key = `haru_profile_${targetId}`;
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        try {
+          const localProfile = JSON.parse(raw) as any;
+          return {
+            nickname: localProfile.nickname || "",
+            bio: localProfile.bio || "",
+            avatarUrl: cleanAvatarUrl(localProfile.avatarUrl || localProfile.avatar_url),
+          } as UserProfile;
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  }, []);
+
+  const getUserProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
+    return loadProfile(userId);
+  }, [loadProfile]);
+
+  // === Authentication (Legacy LocalStorage) ===
+
+  const registerUser = useCallback(async (email: string, password: string): Promise<string> => {
+    const hashedPassword = await hashPassword(password);
+    const raw = localStorage.getItem("haru_users");
+    const users: UserAuth[] = raw ? JSON.parse(raw) : [];
+
+    if (users.some((u) => u.email === email)) {
+      throw new Error("このメールアドレスは既に使用されています。");
+    }
+
+    const newUser: UserAuth = {
+      id: `u_${Math.random().toString(36).slice(2, 9)}`,
+      email,
+      passwordHash: hashedPassword,
+    };
+
+    localStorage.setItem("haru_users", JSON.stringify([...users, newUser]));
+    return newUser.id;
+  }, []);
+
+  const loginUser = useCallback(async (email: string, password: string): Promise<string | null> => {
+    const hashedPassword = await hashPassword(password);
+    const raw = localStorage.getItem("haru_users");
+    const users: UserAuth[] = raw ? JSON.parse(raw) : [];
+    const user = users.find((u) => u.email === email && u.passwordHash === hashedPassword);
+    return user ? user.id : null;
+  }, []);
+
+  const checkEmailExists = useCallback(async (email: string): Promise<boolean> => {
+    const raw = localStorage.getItem("haru_users");
+    const users: UserAuth[] = raw ? JSON.parse(raw) : [];
+    return users.some((u) => u.email === email);
+  }, []);
+
+  const resetPassword = useCallback(async (email: string, newPassword: string): Promise<void> => {
+    const hashedPassword = await hashPassword(newPassword);
+    const raw = localStorage.getItem("haru_users");
+    const users: UserAuth[] = raw ? JSON.parse(raw) : [];
+    const index = users.findIndex((u) => u.email === email);
+
+    if (index === -1) {
+      throw new Error("ユーザーが見つかりません。");
+    }
+
+    users[index].passwordHash = hashedPassword;
+    localStorage.setItem("haru_users", JSON.stringify(users));
+  }, []);
+
+  return useMemo(() => ({
+    saveSMIResult,
+    loadSMIResult,
+    saveSMIHistory,
+    loadSMIHistory,
+    saveDailyRecord,
+    loadDailyRecord,
+    loadAllDailyRecords,
+    loadAllPeriods,
+    savePeriods,
+    getLatestPeriod,
+    listCommunityTopics,
+    loadRecentTopics,
+    createCommunityTopic,
+    listCommunityPosts,
+    loadCommunityPosts,
+    createCommunityPost,
+    loadDiaryPosts,
+    getPostById,
+    getPostLikes,
+    togglePostLike,
+    loadUserPosts,
+    loadUserPublicPosts,
+    listLikedPosts,
+    getUserTotalLikes,
+    loadCommentsByPostId,
+    saveComment,
+    toggleCommentLike,
+    deletePost,
+    deleteComment,
+    saveReport,
+    saveProfile,
+    loadProfile,
+    getUserProfile,
+    registerUser,
+    loginUser,
+    checkEmailExists,
+    resetPassword,
+    isAdmin,
+  }), [
+    saveSMIResult,
+    loadSMIResult,
+    saveSMIHistory,
+    loadSMIHistory,
+    saveDailyRecord,
+    loadDailyRecord,
+    loadAllDailyRecords,
+    loadAllPeriods,
+    savePeriods,
+    getLatestPeriod,
+    listCommunityTopics,
+    loadRecentTopics,
+    createCommunityTopic,
+    listCommunityPosts,
+    loadCommunityPosts,
+    createCommunityPost,
+    loadDiaryPosts,
+    getPostById,
+    getPostLikes,
+    togglePostLike,
+    loadUserPosts,
+    loadUserPublicPosts,
+    listLikedPosts,
+    getUserTotalLikes,
+    loadCommentsByPostId,
+    saveComment,
+    toggleCommentLike,
+    deletePost,
+    deleteComment,
+    saveReport,
+    saveProfile,
+    loadProfile,
+    getUserProfile,
+    registerUser,
+    loginUser,
+    checkEmailExists,
+    resetPassword,
+    isAdmin,
+    getPostById, // getPostById と isAdmin を依存関係に追加
+  ]);
+}
