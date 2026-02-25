@@ -38,7 +38,7 @@ export default function PostDetailScreen({ postId, onBack, onEdit, onDeleted, cu
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-gray-50 text-brandText">
+      <div className="min-h-screen text-brandText">
         <header className="sticky top-0 z-50 w-full bg-[#D4829A] text-white shadow-md">
           <div className="relative mx-auto flex h-14 max-w-screen-md items-center justify-center px-4 md:h-16 md:px-8">
             <div className="absolute left-4 md:left-8">
@@ -50,7 +50,7 @@ export default function PostDetailScreen({ postId, onBack, onEdit, onDeleted, cu
           </div>
         </header>
         <main className="mx-auto w-full max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
-          <div className="rounded-card border border-white/20 bg-white/60 p-6 text-center text-sm text-brandMuted shadow-sm">
+          <div className="rounded-card border border-white/20 bg-white/70 p-6 text-center text-sm text-brandMuted shadow-sm">
             投稿の読み込み中か、見つかりませんでした。
           </div>
         </main>
@@ -142,7 +142,7 @@ export default function PostDetailScreen({ postId, onBack, onEdit, onDeleted, cu
   const isAuthor = post.user_id === currentUserId;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-brandText">
+    <div className="min-h-screen text-brandText">
       <header className="sticky top-0 z-50 w-full bg-[#D4829A] text-white shadow-md">
         <div className="relative mx-auto flex h-14 max-w-screen-md items-center justify-between px-4 md:h-16 md:px-8">
           <div className="absolute left-4 md:left-8">
@@ -173,7 +173,7 @@ export default function PostDetailScreen({ postId, onBack, onEdit, onDeleted, cu
       </header>
       
       <main className="mx-auto w-full max-w-screen-md space-y-4 px-4 pb-10 pt-20 md:px-8 md:pt-24">
-        <div className="space-y-2 rounded-card border border-white/20 bg-white/60 p-4 shadow-sm">
+        <div className="space-y-2 rounded-card border border-white/20 bg-white/70 p-4 shadow-sm">
           <div className="flex items-center justify-between text-xs text-brandMuted">
             <span>{post.type === "diary" ? "日記" : "テーマ投稿"}</span>
             <span className="rounded-full bg-brandAccentAlt/20 px-2 py-[2px] text-[11px]">
@@ -197,7 +197,7 @@ export default function PostDetailScreen({ postId, onBack, onEdit, onDeleted, cu
           </div>
         </div>
 
-        <div className="space-y-3 rounded-card border border-white/20 bg-white/60 p-4 shadow-sm">
+        <div className="space-y-3 rounded-card border border-white/20 bg-white/70 p-4 shadow-sm">
           <div className="text-sm font-semibold">コメント</div>
 
           <div className="flex items-start gap-2">

@@ -184,33 +184,32 @@ export default function App() {
     nav.navigate("profile");
   };
 
-  if (authLoading) {
-    return <div className="w-full h-screen flex items-center justify-center">Loading...</div>;
-  }
-
-  // 未ログイン時の表示
-  if (!currentUserId) {
-    return <AuthNavigator onLoginSuccess={handleLoginSuccess} />;
-  }
-
   return (
-    <AppNavigator
-      nav={nav}
-      totalScore={totalScore}
-      todayDaily={todayDaily}
-      dailyItems={dailyItems}
-      historyRecords={historyRecords}
-      latestPeriod={latestPeriod}
-      selectedDate={selectedDate}
-      currentUserId={currentUserId}
-      onFinishSMI={handleFinishSMI}
-      onStartDailyCheck={handleStartDailyCheck}
-      onSaveDaily={handleSaveDaily}
-      onSelectDate={handleSelectDate}
-      onUpdateTodayDaily={(updated: DailyRecord) => setTodayDaily(updated)}
-      onLogout={handleLogout}
-      viewingUserId={viewingUserId}
-      onOpenProfile={handleOpenProfile}
-    />
+    <div className="min-h-screen bg-gradient-to-br from-[#BAE6FD] to-[#FBCFE8]">
+      {authLoading ? (
+        <div className="flex h-screen w-full items-center justify-center">Loading...</div>
+      ) : !currentUserId ? (
+        <AuthNavigator onLoginSuccess={handleLoginSuccess} />
+      ) : (
+        <AppNavigator
+          nav={nav}
+          totalScore={totalScore}
+          todayDaily={todayDaily}
+          dailyItems={dailyItems}
+          historyRecords={historyRecords}
+          latestPeriod={latestPeriod}
+          selectedDate={selectedDate}
+          currentUserId={currentUserId}
+          onFinishSMI={handleFinishSMI}
+          onStartDailyCheck={handleStartDailyCheck}
+          onSaveDaily={handleSaveDaily}
+          onSelectDate={handleSelectDate}
+          onUpdateTodayDaily={(updated: DailyRecord) => setTodayDaily(updated)}
+          onLogout={handleLogout}
+          viewingUserId={viewingUserId}
+          onOpenProfile={handleOpenProfile}
+        />
+      )}
+    </div>
   );
 }

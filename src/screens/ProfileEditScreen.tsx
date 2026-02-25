@@ -53,10 +53,10 @@ export default function ProfileEditScreen({ onBack, onSaved }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-brandText">
+    <div className="min-h-screen text-brandText">
       <PageHeader title="プロフィール編集" onBack={onBack} />
       <main className="mx-auto max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
-        <div className="rounded-card border border-white/20 bg-white/60 p-6 shadow-sm">
+        <div className="rounded-card border border-white/20 bg-white/70 p-6 shadow-sm">
           <div className="space-y-4">
             <div className="space-y-1">
               <label className="text-sm font-semibold">ニックネーム</label>

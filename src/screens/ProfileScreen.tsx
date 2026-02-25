@@ -91,10 +91,10 @@ export default function ProfileScreen({
   const displayPosts = activeTab === "posts" ? myPosts : likedPosts;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-brandText">
+    <div className="min-h-screen text-brandText">
       <PageHeader title="プロフィール" onBack={onBack} />
       <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-10 pt-20 md:px-8 md:pt-24">
-        <div className="space-y-2 rounded-card border border-white/20 bg-white/60 p-6 text-center shadow-sm">
+        <div className="space-y-2 rounded-card border border-white/20 bg-white/70 p-6 text-center shadow-sm">
           <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-brandAccentAlt/30 text-2xl">
             <img
               src={getAvatarSrc()}

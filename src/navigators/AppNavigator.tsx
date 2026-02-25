@@ -61,7 +61,7 @@ export default function AppNavigator({
   const communityNav = useCommunityNavigation(nav);
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-[#BAE6FD] to-[#FBCFE8]">
+    <div className="w-full min-h-screen">
       {nav.screen === "smi" && <SMIQuestionScreen onFinish={onFinishSMI} />}
 
       {nav.screen === "result" && (

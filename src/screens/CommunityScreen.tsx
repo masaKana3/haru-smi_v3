@@ -55,7 +55,7 @@ const PostItem: React.FC<{
   };
 
   return (
-    <div className="bg-white/60 border border-white/20 rounded-card p-4 shadow-sm space-y-3 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => onOpenPostDetail && onOpenPostDetail(post.id)}>
+    <div className="bg-white/70 border border-white/20 rounded-card p-4 shadow-sm space-y-3 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => onOpenPostDetail && onOpenPostDetail(post.id)}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <img
@@ -175,7 +175,7 @@ export default function CommunityScreen({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-brandText">
+    <div className="min-h-screen text-brandText">
       <PageHeader title="コミュニティ" onBack={onBack} />
 
       {/* Content */}

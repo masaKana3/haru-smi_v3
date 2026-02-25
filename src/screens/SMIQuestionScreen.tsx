@@ -67,7 +67,7 @@ export default function SMIQuestionScreen({ onFinish, onCancel }: Props) {
   const currentAnswer = answers[currentItem.id];
 
   return (
-    <div className="min-h-screen bg-gray-50 text-brandText">
+    <div className="min-h-screen text-brandText">
       <PageHeader title="更年期指数チェック" onBack={onCancel} />
       <main className="mx-auto w-full max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
         {/* プログレスバー */}
@@ -85,7 +85,7 @@ export default function SMIQuestionScreen({ onFinish, onCancel }: Props) {
         </div>
 
         {/* 質問カード */}
-        <div className="mb-6 flex min-h-[300px] flex-col items-center justify-center rounded-card border border-white/20 bg-white/60 p-6 text-center shadow-sm">
+        <div className="mb-6 flex min-h-[300px] flex-col items-center justify-center rounded-card border border-white/20 bg-white/70 p-6 text-center shadow-sm">
           <h2 className="mb-8 text-lg font-semibold">{currentItem.text}</h2>
           
           <div className="w-full space-y-3">

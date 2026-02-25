@@ -88,10 +88,10 @@ export default function SettingsScreen({ onBack, onLogout, onOpenProfile }: Prop
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-brandText">
+    <div className="min-h-screen text-brandText">
       <PageHeader title="設定" onBack={onBack} />
       <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-10 pt-20 md:px-8 md:pt-24">
-        <div className="space-y-6 rounded-card border border-white/20 bg-white/60 p-6 shadow-sm">
+        <div className="space-y-6 rounded-card border border-white/20 bg-white/70 p-6 shadow-sm">
           <div className="space-y-2">
             <h3 className="text-sm font-semibold">アカウント設定</h3>
             <button

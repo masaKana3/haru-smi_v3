@@ -84,10 +84,10 @@ export default function PostCreateScreen({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-brandText">
+    <div className="min-h-screen text-brandText">
       <PageHeader title={isEditing ? "投稿を編集" : "投稿を作成"} onBack={onBack} />
       <main className="mx-auto max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
-        <div className="space-y-4 rounded-card border border-white/20 bg-white/60 p-4 shadow-sm md:p-6">
+        <div className="space-y-4 rounded-card border border-white/20 bg-white/70 p-4 shadow-sm md:p-6">
           {defaultType !== 'official' && (
             <div className="space-y-1">
               <div className="text-sm font-semibold">タイプ</div>

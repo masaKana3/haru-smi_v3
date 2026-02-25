@@ -54,11 +54,11 @@ export default function SMIHistoryScreen({ onBack, onStartMeasure }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-brandText">
+    <div className="min-h-screen text-brandText">
       <PageHeader title="履歴とアドバイス" onBack={onBack} />
       <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-10 pt-20 md:px-8 md:pt-24">
         {/* 最新の結果カード */}
-        <div className="space-y-4 rounded-card border border-white/20 bg-white/60 p-6 text-center shadow-sm">
+        <div className="space-y-4 rounded-card border border-white/20 bg-white/70 p-6 text-center shadow-sm">
           <div className="font-semibold text-brandMuted text-sm">現在の更年期指数</div>
           <div className="text-4xl font-bold text-brandAccent">{latestRecord ? latestScore : "—"}</div>
           
@@ -80,7 +80,7 @@ export default function SMIHistoryScreen({ onBack, onStartMeasure }: Props) {
 
         {/* グラフ */}
         {history.length > 0 && (
-          <div className="space-y-4 rounded-card border border-white/20 bg-white/60 p-4 shadow-sm">
+          <div className="space-y-4 rounded-card border border-white/20 bg-white/70 p-4 shadow-sm">
             <div className="text-sm font-semibold">スコア推移</div>
             <div className="h-64 w-full text-xs">
               <ResponsiveContainer width="100%" height="100%">

@@ -143,7 +143,7 @@ export default function DailyCheckScreen({ dailyItems, onComplete, onCancel }: P
   };
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50 text-brandText">
+    <div className="flex h-screen flex-col text-brandText">
       <PageHeader title="デイリーチェック" onBack={onCancel} />
       <main className="mx-auto w-full max-w-screen-md flex-1 overflow-hidden px-4 md:px-8">
         <div className="flex h-full flex-col">

@@ -31,8 +31,8 @@ export default function SignupScreen({ onSuccess, onCancel }: Props) {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-brandText">
-      <div className="w-full max-w-sm rounded-card border border-white/20 bg-white/60 p-8 shadow-sm">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 text-brandText">
+      <div className="w-full max-w-sm rounded-card border border-white/20 bg-white/70 p-8 shadow-sm">
         <h2 className="text-center text-xl font-semibold">新規登録</h2>
 
         {error && (
