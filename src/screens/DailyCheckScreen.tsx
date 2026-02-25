@@ -148,7 +148,7 @@ export default function DailyCheckScreen({ dailyItems, onComplete, onCancel }: P
       <main className="mx-auto w-full max-w-screen-md flex-1 overflow-hidden px-4 md:px-8">
         <div className="flex h-full flex-col">
           {/* チャットエリア */}
-          <div className="flex-1 space-y-4 overflow-y-auto py-4">
+          <div className="flex-1 space-y-4 overflow-y-auto pt-4 pb-20">
             {messages.map((m) => (
               <ChatBubble key={m.id} from={m.from} text={m.text} avatarUrl={userAvatar} />
             ))}
@@ -156,7 +156,7 @@ export default function DailyCheckScreen({ dailyItems, onComplete, onCancel }: P
           </div>
 
           {/* 選択肢 or 数値入力 */}
-          <div className="py-4">
+          <div className="pt-4 pb-20">
             {currentItem && currentItem.id !== "temperature" && options.length > 0 && (
               <ChoiceButtons options={options} onSelect={handleSelect} />
             )}

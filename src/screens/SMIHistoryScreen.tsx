@@ -56,7 +56,7 @@ export default function SMIHistoryScreen({ onBack, onStartMeasure }: Props) {
   return (
     <div className="min-h-screen text-brandText">
       <PageHeader title="履歴とアドバイス" onBack={onBack} />
-      <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-10 pt-20 md:px-8 md:pt-24">
+      <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-28 pt-20 md:px-8 md:pt-24">
         {/* 最新の結果カード */}
         <div className="space-y-4 rounded-card border border-white/20 bg-white/70 p-6 text-center shadow-sm">
           <div className="font-semibold text-brandMuted text-sm">現在の更年期指数</div>

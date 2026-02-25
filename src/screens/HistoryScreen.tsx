@@ -61,7 +61,7 @@ export default function HistoryScreen({
   return (
     <div className="min-h-screen text-brandText">
       <PageHeader title="体調カレンダー" onBack={onBack} />
-      <main className="mx-auto max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
+      <main className="mx-auto max-w-screen-md px-4 pb-28 pt-20 md:px-8 md:pt-24">
         <CalendarGrid
           entries={calendarEntries}
           menstrualMarkers={menstrualMarkers}

@@ -227,7 +227,7 @@ export default function DashboardScreen({
   return (
     <div className="min-h-screen text-brandText">
       <PageHeader title="ダッシュボード" showBackButton={false} />
-      <main className="mx-auto max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
+      <main className="mx-auto max-w-screen-md px-4 pb-28 pt-20 md:px-8 md:pt-24">
         <div className="space-y-6">
 
           {/* あいさつ */}

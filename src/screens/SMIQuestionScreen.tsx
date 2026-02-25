@@ -69,7 +69,7 @@ export default function SMIQuestionScreen({ onFinish, onCancel }: Props) {
   return (
     <div className="min-h-screen text-brandText">
       <PageHeader title="更年期指数チェック" onBack={onCancel} />
-      <main className="mx-auto w-full max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
+      <main className="mx-auto w-full max-w-screen-md px-4 pb-28 pt-20 md:px-8 md:pt-24">
         {/* プログレスバー */}
         <div className="mb-6">
           <div className="mb-1 flex justify-between text-xs text-brandMuted">

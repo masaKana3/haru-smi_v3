@@ -62,7 +62,7 @@ export default function ThreadScreen({
     return (
       <div className="min-h-screen text-brandText">
         <PageHeader title="読み込み中..." onBack={onBack} />
-        <main className="mx-auto flex max-w-screen-md items-center justify-center px-4 pb-10 pt-20 md:px-8 md:pt-24">
+        <main className="mx-auto flex max-w-screen-md items-center justify-center px-4 pb-28 pt-20 md:px-8 md:pt-24">
           <p>読み込み中...</p>
         </main>
       </div>
@@ -73,7 +73,7 @@ export default function ThreadScreen({
     return (
       <div className="min-h-screen text-brandText">
         <PageHeader title="エラー" onBack={onBack} />
-        <main className="mx-auto max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
+        <main className="mx-auto max-w-screen-md px-4 pb-28 pt-20 md:px-8 md:pt-24">
           <div className="rounded-card border border-white/20 bg-white/70 p-6 text-center text-sm text-brandMuted shadow-sm">
             テーマが見つかりませんでした。
           </div>
@@ -85,7 +85,7 @@ export default function ThreadScreen({
   return (
     <div className="min-h-screen text-brandText">
       <PageHeader title={topic.title} onBack={onBack} />
-      <main className="mx-auto max-w-screen-md space-y-4 px-4 pb-10 pt-20 md:px-8 md:pt-24">
+      <main className="mx-auto max-w-screen-md space-y-4 px-4 pb-28 pt-20 md:px-8 md:pt-24">
         <div className="space-y-2 rounded-card border border-white/20 bg-white/70 p-4 shadow-sm">
           <div className="text-sm font-semibold">テーマ</div>
           <div className="text-xs leading-relaxed text-brandMuted">{topic.title}</div>

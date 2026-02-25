@@ -72,7 +72,7 @@ export default function DailyCheckDetail({
     return (
       <div className="min-h-screen text-brandText">
         <PageHeader title={`${selectedDate} の記録`} onBack={onBack} />
-        <main className="mx-auto max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
+        <main className="mx-auto max-w-screen-md px-4 pb-28 pt-20 md:px-8 md:pt-24">
           <div className="w-full rounded-card border border-white/20 bg-white/70 p-6 shadow-sm">
             <div className="mb-4 text-center text-xs text-red-500">
               ※ 未来の日付は編集できません
@@ -195,7 +195,7 @@ export default function DailyCheckDetail({
   return (
     <div className="min-h-screen text-brandText">
       <PageHeader title={`${selectedDate} の記録`} onBack={onBack} />
-      <main className="mx-auto max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
+      <main className="mx-auto max-w-screen-md px-4 pb-28 pt-20 md:px-8 md:pt-24">
         <div className="w-full rounded-card border border-white/20 bg-white/70 p-4 shadow-sm md:p-6">
 
           {/* --- 1. 生理の記録 --- */}

@@ -159,7 +159,7 @@ export default function InsightScreen({ todayDaily, onBack, latestPeriod, allDai
   return (
     <div className="min-h-screen text-brandText">
       <PageHeader title="分析・アドバイス" onBack={onBack} />
-      <main className="mx-auto max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
+      <main className="mx-auto max-w-screen-md px-4 pb-28 pt-20 md:px-8 md:pt-24">
         <div className="space-y-4 rounded-card border border-white/20 bg-white/70 p-4 shadow-sm md:p-6">
           <div className="text-right text-xs text-brandMuted">{todayLabel}</div>
           {/* タブ切り替え */}

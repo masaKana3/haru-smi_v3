@@ -76,7 +76,7 @@ export default function DiaryScreen({
   return (
     <div className="min-h-screen text-brandText">
       <PageHeader title="日記" onBack={onBack} />
-      <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-10 pt-20 md:px-8 md:pt-24">
+      <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-28 pt-20 md:px-8 md:pt-24">
         <div className="space-y-3 rounded-card border border-white/20 bg-white/70 p-4 shadow-sm">
           <div className="text-sm font-semibold">日記の検索・絞り込み</div>
           <div className="space-y-3 pt-1">

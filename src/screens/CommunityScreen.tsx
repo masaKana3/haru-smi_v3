@@ -179,7 +179,7 @@ export default function CommunityScreen({
       <PageHeader title="コミュニティ" onBack={onBack} />
 
       {/* Content */}
-      <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-10 pt-20 md:px-8 md:pt-24">
+      <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-28 pt-20 md:px-8 md:pt-24">
         
         {/* Diary Section */}
         <Card as="button" onClick={onOpenDiary} className="w-full p-4 text-left transition-colors hover:bg-gray-50">

@@ -20,6 +20,7 @@ import { PeriodRecord } from "../types/period";
 import { SMIConvertedAnswer } from "../types/smi";
 import { useNavigation } from "../hooks/useNavigation";
 import { useCommunityNavigation } from "../hooks/useCommunityNavigation";
+import BottomNav from "../components/layout/BottomNav";
 
 type Props = {
   nav: ReturnType<typeof useNavigation>;
@@ -60,9 +61,14 @@ export default function AppNavigator({
 }: Props) {
   const communityNav = useCommunityNavigation(nav);
 
+  const showBottomNav = ![
+    "smi", 
+    "result",
+  ].includes(nav.screen);
+
   return (
     <div className="w-full min-h-screen">
-      {nav.screen === "smi" && <SMIQuestionScreen onFinish={onFinishSMI} />}
+      {nav.screen === "smi" && <SMIQuestionScreen onFinish={onFinishSMI} onCancel={() => nav.goBack("dashboard")} />}
 
       {nav.screen === "result" && (
         <ResultScreen total={totalScore} onGoDashboard={() => nav.navigate("dashboard")} />
@@ -90,10 +96,9 @@ export default function AppNavigator({
         <DailyCheckScreen
           dailyItems={dailyItems}
           onComplete={(data) => {
-            onUpdateTodayDaily(data);
-            nav.navigate("detail");
+            onSaveDaily(data);
           }}
-          onCancel={() => nav.navigate("dashboard")}
+          onCancel={() => nav.goBack("dashboard")}
         />
       )}
 
@@ -120,7 +125,7 @@ export default function AppNavigator({
       )}
 
       {nav.screen === "smi_history" && (
-        <SMIHistoryScreen onBack={() => nav.navigate("dashboard")} />
+        <SMIHistoryScreen onBack={() => nav.navigate("dashboard")} onStartMeasure={() => nav.navigate("smi")} />
       )}
 
       {nav.screen === "community" && (
@@ -128,7 +133,7 @@ export default function AppNavigator({
           onBack={() => nav.navigate("dashboard")}
           onCreatePost={communityNav.handleCreatePost}
           onOpenThread={communityNav.handleOpenThread}
-          onOpenDiary={() => nav.navigate("diary")}
+          onOpenDiary={() => communityNav.handleCreatePost({ type: "diary" })}
           onOpenPostDetail={communityNav.handleOpenPostDetail}
           currentUserId={currentUserId}
           onOpenProfile={onOpenProfile}
@@ -137,7 +142,7 @@ export default function AppNavigator({
 
       {nav.screen === "postCreate" && (
         <PostCreateScreen
-          onBack={() => nav.navigate("community")}
+          onBack={() => nav.goBack("community")}
           onSaved={(postId) => {
             nav.setActivePostId(postId);
             nav.navigate("postDetail");
@@ -152,7 +157,7 @@ export default function AppNavigator({
       {nav.screen === "thread" && nav.activeTopicId && (
         <ThreadScreen
           topicId={nav.activeTopicId}
-          onBack={() => nav.navigate("community")}
+          onBack={() => nav.goBack("community")}
           onCreatePost={(topicId) => communityNav.handleCreatePost({ topicId, type: "thread" })}
           onOpenPostDetail={communityNav.handleOpenPostDetail}
           onOpenProfile={onOpenProfile}
@@ -166,13 +171,14 @@ export default function AppNavigator({
           onOpenPostDetail={communityNav.handleOpenPostDetail}
           onCreateDiary={() => communityNav.handleCreatePost({ type: "diary" })}
           currentUserId={currentUserId}
+          onOpenProfile={onOpenProfile}
         />
       )}
 
       {nav.screen === "postDetail" && nav.activePostId && (
         <PostDetailScreen
           postId={nav.activePostId}
-          onBack={() => nav.navigate("community")}
+          onBack={() => nav.goBack()}
           currentUserId={currentUserId}
           onEdit={() => communityNav.handleEditPost(nav.activePostId!)}
           onDeleted={() => communityNav.handlePostDeleted()}
@@ -182,7 +188,7 @@ export default function AppNavigator({
 
       {nav.screen === "profile" && (
         <ProfileScreen
-          onBack={() => nav.navigate("settings")}
+          onBack={() => nav.goBack("settings")}
           onOpenPostDetail={communityNav.handleOpenPostDetail}
           currentUserId={currentUserId}
           viewingUserId={viewingUserId || currentUserId}
@@ -195,6 +201,8 @@ export default function AppNavigator({
         <InsightScreen
           todayDaily={todayDaily}
           onBack={() => nav.navigate("dashboard")}
+          latestPeriod={latestPeriod}
+          allDailyRecords={historyRecords}
         />
       )}
 
@@ -202,7 +210,7 @@ export default function AppNavigator({
         <SettingsScreen
           onBack={() => nav.navigate("dashboard")}
           onLogout={onLogout}
-          onOpenProfile={() => nav.navigate("profile")}
+          onOpenProfile={() => onOpenProfile(currentUserId)}
         />
       )}
 
@@ -210,6 +218,13 @@ export default function AppNavigator({
         <ProfileEditScreen
           onBack={() => nav.goBack("profile")}
           onSaved={() => nav.goBack("profile")}
+        />
+      )}
+      
+      {showBottomNav && (
+        <BottomNav
+          activeScreen={nav.screen}
+          onNavigate={(screen) => nav.navigate(screen)}
         />
       )}
     </div>

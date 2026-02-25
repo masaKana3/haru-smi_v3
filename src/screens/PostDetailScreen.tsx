@@ -49,7 +49,7 @@ export default function PostDetailScreen({ postId, onBack, onEdit, onDeleted, cu
             <h1 className="text-lg font-semibold md:text-xl">投稿</h1>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
+        <main className="mx-auto w-full max-w-screen-md px-4 pb-28 pt-20 md:px-8 md:pt-24">
           <div className="rounded-card border border-white/20 bg-white/70 p-6 text-center text-sm text-brandMuted shadow-sm">
             投稿の読み込み中か、見つかりませんでした。
           </div>
@@ -172,7 +172,7 @@ export default function PostDetailScreen({ postId, onBack, onEdit, onDeleted, cu
         </div>
       </header>
       
-      <main className="mx-auto w-full max-w-screen-md space-y-4 px-4 pb-10 pt-20 md:px-8 md:pt-24">
+      <main className="mx-auto w-full max-w-screen-md space-y-4 px-4 pb-28 pt-20 md:px-8 md:pt-24">
         <div className="space-y-2 rounded-card border border-white/20 bg-white/70 p-4 shadow-sm">
           <div className="flex items-center justify-between text-xs text-brandMuted">
             <span>{post.type === "diary" ? "日記" : "テーマ投稿"}</span>

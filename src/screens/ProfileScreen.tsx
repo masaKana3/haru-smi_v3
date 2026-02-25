@@ -93,7 +93,7 @@ export default function ProfileScreen({
   return (
     <div className="min-h-screen text-brandText">
       <PageHeader title="プロフィール" onBack={onBack} />
-      <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-10 pt-20 md:px-8 md:pt-24">
+      <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-28 pt-20 md:px-8 md:pt-24">
         <div className="space-y-2 rounded-card border border-white/20 bg-white/70 p-6 text-center shadow-sm">
           <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-brandAccentAlt/30 text-2xl">
             <img
