@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { useStorage } from "../hooks/useStorage";
 import { SMIRecord } from "../types/smi";
+import PageHeader from "../components/layout/PageHeader";
 
 type Props = {
   onBack: () => void;
@@ -46,34 +47,23 @@ export default function SMIHistoryScreen({ onBack, onStartMeasure }: Props) {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center text-brandMuted">
+      <div className="flex min-h-screen items-center justify-center text-brandMuted">
         読み込み中...
       </div>
     );
   }
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center p-6 text-brandText">
-      <div className="w-full max-w-sm space-y-6">
-        {/* ヘッダー */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="text-sm text-brandAccent hover:opacity-80 transition-opacity"
-          >
-            戻る
-          </button>
-          <div className="text-md font-semibold">履歴とアドバイス</div>
-          <div className="w-8" />
-        </div>
-
+    <div className="min-h-screen bg-gray-50 text-brandText">
+      <PageHeader title="履歴とアドバイス" onBack={onBack} />
+      <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-10 pt-20 md:px-8 md:pt-24">
         {/* 最新の結果カード */}
-        <div className="bg-white/60 border border-white/20 rounded-card p-6 shadow-sm text-center space-y-4">
-          <div className="text-sm font-semibold text-brandMuted">現在の更年期指数</div>
+        <div className="space-y-4 rounded-card border border-white/20 bg-white/60 p-6 text-center shadow-sm">
+          <div className="font-semibold text-brandMuted text-sm">現在の更年期指数</div>
           <div className="text-4xl font-bold text-brandAccent">{latestRecord ? latestScore : "—"}</div>
           
           {latestRecord ? (
-            <div className="text-xs text-left bg-brandInput p-3 rounded-md leading-relaxed text-brandText">
+            <div className="text-left leading-relaxed text-brandText rounded-md bg-brandInput p-3 text-xs">
               {getAdvice(latestScore)}
             </div>
           ) : (
@@ -82,7 +72,7 @@ export default function SMIHistoryScreen({ onBack, onStartMeasure }: Props) {
 
           <button
             onClick={onStartMeasure}
-            className="w-full py-3 bg-brandAccent text-white rounded-button text-sm font-semibold shadow-sm hover:bg-brandAccentHover transition-colors"
+            className="w-full rounded-button bg-brandAccent py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brandAccentHover"
           >
             新しく計測する
           </button>
@@ -90,7 +80,7 @@ export default function SMIHistoryScreen({ onBack, onStartMeasure }: Props) {
 
         {/* グラフ */}
         {history.length > 0 && (
-          <div className="bg-white/60 border border-white/20 rounded-card p-4 shadow-sm space-y-4">
+          <div className="space-y-4 rounded-card border border-white/20 bg-white/60 p-4 shadow-sm">
             <div className="text-sm font-semibold">スコア推移</div>
             <div className="h-64 w-full text-xs">
               <ResponsiveContainer width="100%" height="100%">
@@ -117,9 +107,9 @@ export default function SMIHistoryScreen({ onBack, onStartMeasure }: Props) {
                   <Line
                     type="monotone"
                     dataKey="total"
-                    stroke="#E91E63"
+                    stroke="#D4829A"
                     strokeWidth={3}
-                    dot={{ fill: '#E91E63', r: 4, strokeWidth: 2, stroke: '#fff' }}
+                    dot={{ fill: '#D4829A', r: 4, strokeWidth: 2, stroke: '#fff' }}
                     activeDot={{ r: 6 }}
                   />
                 </LineChart>
@@ -127,7 +117,7 @@ export default function SMIHistoryScreen({ onBack, onStartMeasure }: Props) {
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

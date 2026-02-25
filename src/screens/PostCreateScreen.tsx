@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { CommunityPost, CommunityTopic } from "../types/community";
 import { useStorage } from "../hooks/useStorage";
+import PageHeader from "../components/layout/PageHeader";
 
 type Props = {
   onBack: () => void;
@@ -83,20 +84,10 @@ export default function PostCreateScreen({
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center p-6 text-brandText">
-      <div className="w-full max-w-sm bg-white/60 border border-white/20 rounded-card p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="text-sm text-brandAccent hover:opacity-80 transition-opacity"
-          >
-            ← 戻る
-          </button>
-          <div className="text-md font-semibold">{isEditing ? "投稿を編集" : "投稿を作成"}</div>
-          <div className="w-10" />
-        </div>
-
-        <div className="space-y-3">
+    <div className="min-h-screen bg-gray-50 text-brandText">
+      <PageHeader title={isEditing ? "投稿を編集" : "投稿を作成"} onBack={onBack} />
+      <main className="mx-auto max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
+        <div className="space-y-4 rounded-card border border-white/20 bg-white/60 p-4 shadow-sm md:p-6">
           {defaultType !== 'official' && (
             <div className="space-y-1">
               <div className="text-sm font-semibold">タイプ</div>
@@ -127,7 +118,7 @@ export default function PostCreateScreen({
               <select
                 value={topicId}
                 onChange={(e) => setTopicId(e.target.value)}
-                className="w-full border border-brandAccentAlt rounded-card px-3 py-2 text-sm"
+                className="w-full rounded-card border border-brandAccentAlt px-3 py-2 text-sm"
                 disabled={type === 'official'}
               >
                 <option value="">選択してください</option>
@@ -167,7 +158,7 @@ export default function PostCreateScreen({
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full border border-brandAccentAlt rounded-card px-3 py-2 text-sm"
+              className="w-full rounded-card border border-brandAccentAlt px-3 py-2 text-sm"
               placeholder="例）今日の気づき"
             />
           </div>
@@ -177,7 +168,7 @@ export default function PostCreateScreen({
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="w-full border border-brandAccentAlt rounded-card px-3 py-2 text-sm min-h-[140px]"
+              className="min-h-[140px] w-full rounded-card border border-brandAccentAlt px-3 py-2 text-sm"
               placeholder="感じたことを書いてみましょう"
             />
           </div>
@@ -186,12 +177,12 @@ export default function PostCreateScreen({
 
           <button
             onClick={handleSubmit}
-            className="w-full py-3 bg-brandAccent hover:bg-brandAccentHover text-white rounded-button text-sm transition-colors"
+            className="w-full rounded-button bg-brandAccent py-3 text-sm text-white transition-colors hover:bg-brandAccentHover"
           >
             {isEditing ? "更新する" : "投稿する"}
           </button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

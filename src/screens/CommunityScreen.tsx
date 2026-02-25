@@ -175,15 +175,15 @@ export default function CommunityScreen({
   };
 
   return (
-    <div className="w-full min-h-screen">
+    <div className="min-h-screen bg-gray-50 text-brandText">
       <PageHeader title="コミュニティ" onBack={onBack} />
 
       {/* Content */}
-      <div className="w-full max-w-sm mx-auto p-4 md:p-6 space-y-5 pb-20">
+      <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-10 pt-20 md:px-8 md:pt-24">
         
         {/* Diary Section */}
-        <Card as="button" onClick={onOpenDiary} className="w-full p-4 text-left hover:bg-gray-50 transition-colors">
-          <h2 className="text-base font-semibold mb-1 text-brandTextStrong">日記を書く</h2>
+        <Card as="button" onClick={onOpenDiary} className="w-full p-4 text-left transition-colors hover:bg-gray-50">
+          <h2 className="mb-1 text-base font-semibold text-brandTextStrong">日記を書く</h2>
           <p className="text-sm text-brandMuted">今日の出来事や感じたことを記録して、タイムラインで共有しましょう。</p>
         </Card>
 
@@ -192,15 +192,15 @@ export default function CommunityScreen({
           <SectionTitle>運営テーマ</SectionTitle>
           
           {isUserAdmin && (
-            <form onSubmit={handleCreateTopic} className="flex items-center gap-2 pt-2 pb-1">
+            <form onSubmit={handleCreateTopic} className="flex items-center gap-2 pb-1 pt-2">
               <input
                 type="text"
                 value={newTopicTitle}
                 onChange={(e) => setNewTopicTitle(e.target.value)}
                 placeholder="新しいお題のタイトル"
-                className="flex-grow p-2 rounded-md text-sm bg-brandInput border-none"
+                className="flex-grow rounded-md border-none bg-brandInput p-2 text-sm"
               />
-              <button type="submit" className="px-4 py-2 bg-brandAccent text-white rounded-button text-sm font-semibold hover:bg-brandAccentHover transition-colors">
+              <button type="submit" className="transform-gpu rounded-button bg-brandAccent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brandAccentHover">
                 作成
               </button>
             </form>
@@ -213,9 +213,9 @@ export default function CommunityScreen({
           ) : (
             <div className="space-y-2">
               {topics.map(topic => (
-                <div key={topic.id} onClick={() => onOpenThread && onOpenThread(topic.id)} className="bg-brandPanel/80 rounded-bubble p-3 cursor-pointer hover:bg-brandAccentAlt/30 transition-colors">
+                <div key={topic.id} onClick={() => onOpenThread && onOpenThread(topic.id)} className="cursor-pointer rounded-bubble bg-brandPanel/80 p-3 transition-colors hover:bg-brandAccentAlt/30">
                   <p className="font-semibold text-sm text-brandTextStrong">{topic.title}</p>
-                  <p className="text-xs text-brandMuted mt-1">作成日: {new Date(topic.created_at).toLocaleDateString('ja-JP')}</p>
+                  <p className="mt-1 text-xs text-brandMuted">作成日: {new Date(topic.created_at).toLocaleDateString('ja-JP')}</p>
                 </div>
               ))}
             </div>
@@ -231,14 +231,14 @@ export default function CommunityScreen({
           ) : timelinePosts.length === 0 ? (
             <p className="text-sm text-brandMuted">まだ投稿がありません。</p>
           ) : (
-            <div className="space-y-3 max-h-[650px] overflow-y-auto custom-scrollbar">
+            <div className="space-y-3">
               {timelinePosts.map(post => (
                 <PostItem key={post.id} post={post} currentUserId={currentUserId} isUserAdmin={isUserAdmin} onOpenProfile={onOpenProfile} onOpenPostDetail={onOpenPostDetail} onDelete={handleDeletePost} />
               ))}
             </div>
           )}
         </Card>
-      </div>
+      </main>
     </div>
   );
 }

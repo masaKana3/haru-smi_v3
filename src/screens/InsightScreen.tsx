@@ -11,6 +11,7 @@ import { useInsightData } from "../hooks/useInsightData"; // パス確認: src/h
 import DailyReport from "../components/insight/DailyReport"; // パス確認: src/components/insight/DailyReport.tsx
 import WeeklyReport from "../components/insight/WeeklyReport"; // パス確認: src/components/insight/WeeklyReport.tsx
 import MonthlyReport from "../components/insight/MonthlyReport"; // パス確認: src/components/insight/MonthlyReport.tsx
+import PageHeader from "../components/layout/PageHeader";
 
 type Props = {
   todayDaily: DailyRecord | null;
@@ -156,71 +157,65 @@ export default function InsightScreen({ todayDaily, onBack, latestPeriod, allDai
   }, [storage, latestPeriod]);
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center p-6 text-brandText">
-      <div className="w-full max-w-sm bg-white/60 border border-white/20 rounded-card p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="text-sm text-brandAccent hover:opacity-80 transition-opacity"
-          >
-            ← Dashboard に戻る
-          </button>
-          <div className="text-xs text-brandMuted">{todayLabel}</div>
-        </div>
+    <div className="min-h-screen bg-gray-50 text-brandText">
+      <PageHeader title="分析・アドバイス" onBack={onBack} />
+      <main className="mx-auto max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
+        <div className="space-y-4 rounded-card border border-white/20 bg-white/60 p-4 shadow-sm md:p-6">
+          <div className="text-right text-xs text-brandMuted">{todayLabel}</div>
+          {/* タブ切り替え */}
+          <div className="mb-4 flex border-b border-brandAccentAlt/30">
+            {(["daily", "weekly", "monthly"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 pb-2 text-sm font-semibold transition-colors ${
+                  activeTab === tab
+                    ? "border-b-2 border-brandAccent text-brandAccent"
+                    : "text-brandMuted"
+                }`}
+              >
+                {tab === "daily" && "今日"}
+                {tab === "weekly" && "週次"}
+                {tab === "monthly" && "月次"}
+              </button>
+            ))}
+          </div>
 
-        {/* タブ切り替え */}
-        <div className="flex border-b border-brandAccentAlt/30 mb-4">
-          {(["daily", "weekly", "monthly"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 pb-2 text-sm font-semibold transition-colors ${
-                activeTab === tab
-                  ? "text-brandAccent border-b-2 border-brandAccent"
-                  : "text-brandMuted"
-              }`}
-            >
-              {tab === "daily" && "今日"}
-              {tab === "weekly" && "週次"}
-              {tab === "monthly" && "月次"}
-            </button>
-          ))}
-        </div>
+          {activeTab === "daily" && (
+            todayDaily?.answers ? (
+              <DailyReport
+                todayDaily={todayDaily}
+                phaseInfo={phaseInfo}
+                smiHistory={smiHistory}
+                chartData={chartData}
+                periodRanges={periodRanges}
+                haruAdvice={haruAdvice}
+                weatherData={weatherData}
+                weatherError={weatherError}
+                weatherLoading={weatherLoading}
+                recipe={recipe}
+                recipeLoading={recipeLoading}
+              />
+            ) : (
+              <div className="py-8 text-center text-sm text-brandMuted">
+                <p>今日の記録がまだありません。<br />カレンダーから今日を選んで記録してみてくださいね。</p>
+              </div>
+            )
+          )}
 
-        {activeTab === "daily" && (
-          todayDaily?.answers ? (
-            <DailyReport
-              todayDaily={todayDaily}
-              phaseInfo={phaseInfo}
-              smiHistory={smiHistory}
-              chartData={chartData}
-              periodRanges={periodRanges}
-              haruAdvice={haruAdvice}
-              weatherData={weatherData}
-              weatherError={weatherError}
-              weatherLoading={weatherLoading}
-              recipe={recipe}
-              recipeLoading={recipeLoading}
+          {activeTab === "weekly" && (
+            <WeeklyReport
+              weeklyData={weeklyData}
+              todayLabel={todayLabel}
+              weekDates={weekDates}
             />
-          ) : (
-            <div className="py-8 text-center text-sm text-brandMuted">
-              <p>今日の記録がまだありません。<br />カレンダーから今日を選んで記録してみてくださいね。</p>
-            </div>
-          )
-        )}
+          )}
 
-        {activeTab === "weekly" && (
-          <WeeklyReport
-            weeklyData={weeklyData}
-            todayLabel={todayLabel}
-            weekDates={weekDates}
-          />
-        )}
-
-        {activeTab === "monthly" && (
-          <MonthlyReport monthlyData={monthlyData} />
-        )}
-      </div>
+          {activeTab === "monthly" && (
+            <MonthlyReport monthlyData={monthlyData} />
+          )}
+        </div>
+      </main>
     </div>
   );
 }

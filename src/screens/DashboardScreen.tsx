@@ -225,10 +225,10 @@ export default function DashboardScreen({
   };
 
   return (
-    <div className="w-full min-h-screen text-brandText">
+    <div className="min-h-screen text-brandText">
       <PageHeader title="ダッシュボード" showBackButton={false} />
-      <div className="p-6 flex flex-col items-center">
-        <div className="w-full max-w-sm space-y-5">
+      <main className="mx-auto max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
+        <div className="space-y-6">
 
           {/* あいさつ */}
           <div className="relative flex items-center justify-center pt-2">
@@ -237,7 +237,7 @@ export default function DashboardScreen({
             </div>
             <button
               onClick={onOpenSettings}
-              className="absolute right-0 p-2 text-brandMuted hover:text-brandAccent transition-colors"
+              className="absolute right-0 top-0 p-2 text-brandMuted transition-colors hover:text-brandAccent"
               aria-label="設定"
             >
               <svg
@@ -246,7 +246,7 @@ export default function DashboardScreen({
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
-                className="w-6 h-6"
+                className="h-6 w-6"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -266,12 +266,12 @@ export default function DashboardScreen({
           <Card
             as="button"
             onClick={onOpenSMIHistory}
-            className="text-center w-full p-3 space-y-1"
+            className="w-full p-3 text-center"
           >
-            <div className="text-sm mt-1">現在の更年期指数</div>
+            <div className="text-sm">現在の更年期指数</div>
 
-            <div className="relative w-[120px] h-[120px] mx-auto">
-              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 36 36">
+            <div className="relative mx-auto h-28 w-28">
+              <svg className="absolute inset-0 h-full w-full" viewBox="0 0 36 36">
                 <path
                   className="text-brandTrack"
                   strokeWidth="3.5"
@@ -296,7 +296,7 @@ export default function DashboardScreen({
             </div>
 
             <div className="text-xs text-brandMuted">
-              <span className="text-brandAccent font-semibold">詳しくはこちら ＞</span>
+              <span className="font-semibold text-brandAccent">詳しくはこちら ＞</span>
             </div>
           </Card>
 
@@ -304,25 +304,25 @@ export default function DashboardScreen({
           <Card
             as="button"
             onClick={onOpenInsight}
-            className="w-full text-left p-4 shadow-sm border border-brandAccentAlt/20 flex flex-col gap-4 hover:bg-gray-50 transition-colors"
+            className="flex w-full flex-col gap-4 p-4 text-left shadow-sm transition-colors hover:bg-gray-50 border border-brandAccentAlt/20"
           >
             {/* 上段：生理予測情報（データがある場合のみ） */}
             {periodPrediction && periodPrediction.nextPeriodDate && (
               <>
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-xs text-brandMuted mb-1">次の生理予定日</div>
+                    <div className="mb-1 text-xs text-brandMuted">次の生理予定日</div>
                     <div className="text-lg font-bold text-brandText">
                       {formatJPDate(periodPrediction.nextPeriodDate)}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-brandMuted mb-1">あと</div>
+                    <div className="mb-1 text-xs text-brandMuted">あと</div>
                     <div className="text-xl font-bold text-brandAccent">
                       {periodPrediction.daysUntilNext !== null && periodPrediction.daysUntilNext < 0
                         ? "予定日超過"
                         : periodPrediction.daysUntilNext}
-                      <span className="text-sm text-brandText font-normal ml-1">日</span>
+                      <span className="ml-1 text-sm font-normal text-brandText">日</span>
                     </div>
                   </div>
                 </div>
@@ -330,7 +330,7 @@ export default function DashboardScreen({
                 {/* 中段：フェーズ情報 */}
                 {currentPhase && PHASE_STYLES[currentPhase.phase] && (
                   <div className="flex items-center gap-3">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold border ${PHASE_STYLES[currentPhase.phase].color}`}>
+                    <span className={`rounded-full border px-2 py-1 text-[10px] font-bold ${PHASE_STYLES[currentPhase.phase].color}`}>
                       {PHASE_STYLES[currentPhase.phase].label}
                     </span>
                     <span className="text-xs text-brandText">
@@ -345,9 +345,9 @@ export default function DashboardScreen({
 
             {/* 下段：今日の総合アドバイス */}
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <div className="text-xs font-semibold text-brandMuted">今日の総合アドバイス</div>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-brandMuted">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 text-brandMuted">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                 </svg>
               </div>
@@ -357,7 +357,7 @@ export default function DashboardScreen({
                   {summaryAdvice}
                 </div>
               ) : (
-                <div className="text-sm text-brandMuted leading-relaxed">
+                <div className="leading-relaxed text-sm text-brandMuted">
                   今日の体調はいかがですか？<br />
                   今日も無理せず過ごしてくださいね。
                 </div>
@@ -382,13 +382,13 @@ export default function DashboardScreen({
                 ))}
               </div>
             ) : (
-              <div className="text-center text-sm text-brandMuted py-4">
+              <div className="py-4 text-center text-sm text-brandMuted">
                 新しいお題はまだありません。
               </div>
             )}
           </CommunityPreviewCard>
         </div>
-      </div>
+      </main>
     </div>
   );  
 }

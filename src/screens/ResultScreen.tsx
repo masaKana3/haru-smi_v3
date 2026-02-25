@@ -9,12 +9,12 @@ export default function ResultScreen({ total, onGoDashboard }: ResultScreenProps
   const safeTotal = total ?? 0;
 
   return (
-    <div className="w-full h-screen flex flex-col items-center p-8 text-brandText">
-      <div className="max-w-sm w-full bg-white/60 border border-white/20 rounded-card p-8 shadow-sm text-center">
-        <h2 className="text-[20px] font-semibold mb-6">あなたの更年期指数（SMI）</h2>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-brandText">
+      <div className="w-full max-w-sm rounded-card border border-white/20 bg-white/60 p-8 text-center shadow-sm">
+        <h2 className="text-[20px] font-semibold">あなたの更年期指数（SMI）</h2>
 
-        <div className="relative w-40 h-40 mx-auto mb-6">
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 36 36">
+        <div className="relative mx-auto mb-6 mt-6 h-36 w-36">
+          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 36 36">
             <path
               className="text-brandTrack"
               strokeWidth="3.5"
@@ -37,7 +37,7 @@ export default function ResultScreen({ total, onGoDashboard }: ResultScreenProps
           </div>
         </div>
 
-        <p className="text-sm leading-relaxed text-brandText mb-6">
+        <p className="mb-6 text-sm leading-relaxed text-brandText">
           {safeTotal <= 25 && "上手に更年期を過ごしています。"}
           {safeTotal > 25 && safeTotal <= 50 && "生活の見直しに気を配りましょう。"}
           {safeTotal > 50 && safeTotal <= 65 && "医師・カウンセリングの相談が有用です。"}
@@ -47,7 +47,7 @@ export default function ResultScreen({ total, onGoDashboard }: ResultScreenProps
 
         <button
           onClick={onGoDashboard}
-          className="w-full py-3 bg-brandAccent text-white rounded-button hover:bg-brandAccentHover transition-colors"
+          className="w-full rounded-button bg-brandAccent py-3 text-white transition-colors hover:bg-brandAccentHover"
         >
           ダッシュボードへ
         </button>

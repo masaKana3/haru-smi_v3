@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import PostCard from "../components/PostCard";
 import { CommunityPost, CommunityTopic } from "../types/community";
 import { useStorage } from "../hooks/useStorage";
+import PageHeader from "../components/layout/PageHeader";
 
 type Props = {
   topicId: string;
@@ -59,47 +60,35 @@ export default function ThreadScreen({
 
   if (loading) {
     return (
-       <div className="w-full min-h-screen flex flex-col items-center p-6 text-brandText">
-        <div className="w-full max-w-sm pt-20 text-center">
+      <div className="min-h-screen bg-gray-50 text-brandText">
+        <PageHeader title="読み込み中..." onBack={onBack} />
+        <main className="mx-auto flex max-w-screen-md items-center justify-center px-4 pb-10 pt-20 md:px-8 md:pt-24">
           <p>読み込み中...</p>
-        </div>
+        </main>
       </div>
-    )
+    );
   }
 
   if (!topic) {
     return (
-      <div className="w-full min-h-screen flex flex-col items-center p-6 text-brandText">
-        <div className="w-full max-w-sm bg-white/60 border border-white/20 rounded-card p-6 shadow-sm space-y-4">
-          <button
-            onClick={onBack}
-            className="text-sm text-brandAccent hover:opacity-80 transition-opacity"
-          >
-            ← コミュニティ
-          </button>
-          <div className="text-sm text-brandMuted">テーマが見つかりませんでした。</div>
-        </div>
+      <div className="min-h-screen bg-gray-50 text-brandText">
+        <PageHeader title="エラー" onBack={onBack} />
+        <main className="mx-auto max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
+          <div className="rounded-card border border-white/20 bg-white/60 p-6 text-center text-sm text-brandMuted shadow-sm">
+            テーマが見つかりませんでした。
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center p-6 text-brandText">
-      <div className="w-full max-w-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="text-sm text-brandAccent hover:opacity-80 transition-opacity"
-          >
-            ← コミュニティ
-          </button>
-          <div className="text-md font-semibold">{topic.title}</div>
-          <div className="w-10" />
-        </div>
-
-        <div className="bg-white/60 border border-white/20 rounded-card p-4 shadow-sm space-y-2">
+    <div className="min-h-screen bg-gray-50 text-brandText">
+      <PageHeader title={topic.title} onBack={onBack} />
+      <main className="mx-auto max-w-screen-md space-y-4 px-4 pb-10 pt-20 md:px-8 md:pt-24">
+        <div className="space-y-2 rounded-card border border-white/20 bg-white/60 p-4 shadow-sm">
           <div className="text-sm font-semibold">テーマ</div>
-          <div className="text-xs text-brandMuted leading-relaxed">{topic.title}</div>
+          <div className="text-xs leading-relaxed text-brandMuted">{topic.title}</div>
           <button
             className="text-xs text-brandAccent underline"
             onClick={() => onCreatePost(topic.id)}
@@ -123,10 +112,10 @@ export default function ThreadScreen({
             />
           ))}
           {posts.length === 0 && (
-            <div className="text-xs text-brandMuted p-4 text-center">まだ投稿がありません。</div>
+            <div className="p-4 text-center text-xs text-brandMuted">まだ投稿がありません。</div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import CalendarGrid from "../components/calendar/CalendarGrid";
 import { DailyRecord } from "../types/daily";
 import { buildCalendarEntries } from "../utils/calendarEntries";
 import { loadMenstrualMarkers } from "../logic/calendar/menstrualMarkers";
+import PageHeader from "../components/layout/PageHeader";
 
 type Props = {
   onBack: () => void;
@@ -58,16 +59,9 @@ export default function HistoryScreen({
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center p-6 text-brandText">
-      <div className="w-full max-w-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <button onClick={onBack} className="text-sm text-brandMutedAlt">
-            戻る
-          </button>
-          <h2 className="text-md font-semibold text-brandText">体調カレンダー</h2>
-          <div className="w-12" />
-        </div>
-
+    <div className="min-h-screen bg-gray-50 text-brandText">
+      <PageHeader title="体調カレンダー" onBack={onBack} />
+      <main className="mx-auto max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
         <CalendarGrid
           entries={calendarEntries}
           menstrualMarkers={menstrualMarkers}
@@ -76,11 +70,11 @@ export default function HistoryScreen({
         />
 
         {records.length === 0 && (
-          <p className="text-xs text-center text-neutralText">
+          <p className="py-8 text-center text-xs text-neutralText">
             過去の記録はありません。日々の記録をつけてみましょう。
           </p>
         )}
-      </div>
+      </main>
     </div>
   );
 }

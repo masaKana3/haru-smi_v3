@@ -31,37 +31,37 @@ export default function SignupScreen({ onSuccess, onCancel }: Props) {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center p-6 text-brandText">
-      <div className="w-full max-w-sm bg-white/60 border border-white/20 rounded-card p-8 shadow-sm">
-        <h2 className="text-xl font-semibold mb-6 text-center">新規登録</h2>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-brandText">
+      <div className="w-full max-w-sm rounded-card border border-white/20 bg-white/60 p-8 shadow-sm">
+        <h2 className="text-center text-xl font-semibold">新規登録</h2>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded">
+          <div className="mt-6 rounded bg-red-50 p-3 text-sm text-red-600">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSignup} className="space-y-4">
+        <form onSubmit={handleSignup} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">メールアドレス</label>
+            <label className="mb-1 block text-sm font-medium">メールアドレス</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-brandAccentAlt rounded px-3 py-2"
+              className="w-full rounded border border-brandAccentAlt px-3 py-2"
               placeholder="example@email.com"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">パスワード</label>
+            <label className="mb-1 block text-sm font-medium">パスワード</label>
             <input
               type="password"
               required
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-brandAccentAlt rounded px-3 py-2"
+              className="w-full rounded border border-brandAccentAlt px-3 py-2"
               placeholder="6文字以上"
             />
           </div>
@@ -69,7 +69,7 @@ export default function SignupScreen({ onSuccess, onCancel }: Props) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-brandAccent hover:bg-brandAccentHover text-white rounded-button font-medium disabled:opacity-50 transition-colors"
+            className="w-full rounded-button bg-brandAccent py-3 font-medium text-white transition-colors hover:bg-brandAccentHover disabled:opacity-50"
           >
             {loading ? "処理中..." : "登録する"}
           </button>

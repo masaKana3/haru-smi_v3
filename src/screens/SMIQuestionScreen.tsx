@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { SMIConvertedAnswer, SMIQuestionId, SMIAnswerLabel } from "../types/smi";
+import PageHeader from "../components/layout/PageHeader";
 
 // SMI質問定義（小山嵩夫先生の簡略更年期指数）
 const SMI_ITEMS = [
@@ -66,22 +67,16 @@ export default function SMIQuestionScreen({ onFinish, onCancel }: Props) {
   const currentAnswer = answers[currentItem.id];
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center p-6 text-brandText">
-      <div className="w-full max-w-sm">
-        {/* 戻るボタン */}
-        <div className="mb-4">
-          <button onClick={onCancel} className="text-sm text-brandMuted hover:text-brandText">
-            ← 戻る
-          </button>
-        </div>
-
+    <div className="min-h-screen bg-gray-50 text-brandText">
+      <PageHeader title="更年期指数チェック" onBack={onCancel} />
+      <main className="mx-auto w-full max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
         {/* プログレスバー */}
         <div className="mb-6">
-          <div className="flex justify-between text-xs text-brandMuted mb-1">
+          <div className="mb-1 flex justify-between text-xs text-brandMuted">
             <span>Question {step + 1}</span>
             <span>{totalSteps}</span>
           </div>
-          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
             <div 
               className="h-full bg-brandAccent transition-all duration-300 ease-out"
               style={{ width: `${progress}%` }}
@@ -90,8 +85,8 @@ export default function SMIQuestionScreen({ onFinish, onCancel }: Props) {
         </div>
 
         {/* 質問カード */}
-        <div className="bg-white/60 border border-white/20 rounded-card p-6 shadow-sm mb-6 min-h-[300px] flex flex-col justify-center items-center text-center">
-          <h2 className="text-lg font-semibold mb-8">{currentItem.text}</h2>
+        <div className="mb-6 flex min-h-[300px] flex-col items-center justify-center rounded-card border border-white/20 bg-white/60 p-6 text-center shadow-sm">
+          <h2 className="mb-8 text-lg font-semibold">{currentItem.text}</h2>
           
           <div className="w-full space-y-3">
             <OptionButton 
@@ -122,10 +117,10 @@ export default function SMIQuestionScreen({ onFinish, onCancel }: Props) {
           <button
             onClick={handleBack}
             disabled={step === 0}
-            className={`flex-1 py-3 rounded-button font-semibold transition-colors ${
+            className={`flex-1 rounded-button py-3 font-semibold transition-colors ${
               step === 0 
-                ? "bg-transparent text-transparent cursor-default" 
-                : "bg-white text-brandMuted border border-brandAccentAlt/50 hover:bg-gray-50"
+                ? "cursor-default bg-transparent text-transparent" 
+                : "border border-brandAccentAlt/50 bg-white text-brandMuted hover:bg-gray-50"
             }`}
           >
             戻る
@@ -134,16 +129,16 @@ export default function SMIQuestionScreen({ onFinish, onCancel }: Props) {
           <button
             onClick={handleNext}
             disabled={!currentAnswer}
-            className={`flex-1 py-3 rounded-button font-semibold text-white transition-colors ${
+            className={`flex-1 rounded-button py-3 font-semibold text-white transition-colors ${
               !currentAnswer
-                ? "bg-gray-300 cursor-not-allowed"
+                ? "cursor-not-allowed bg-gray-300"
                 : "bg-brandAccent hover:opacity-90"
             }`}
           >
             {step === totalSteps - 1 ? "結果を計算する" : "次へ"}
           </button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
@@ -152,10 +147,10 @@ function OptionButton({ label, selected, onClick }: { label: string; selected: b
   return (
     <button
       onClick={onClick}
-      className={`w-full py-3 rounded-button border transition-all ${
+      className={`w-full rounded-button border py-3 transition-all ${
         selected
-          ? "bg-brandAccent text-white border-brandAccent shadow-md scale-[1.02]"
-          : "bg-white text-brandText border-brandAccentAlt/30 hover:bg-gray-50"
+          ? "scale-[1.02] border-brandAccent bg-brandAccent text-white shadow-md"
+          : "border-brandAccentAlt/30 bg-white text-brandText hover:bg-gray-50"
       }`}
     >
       {label}

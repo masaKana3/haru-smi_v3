@@ -35,9 +35,9 @@ export default function ForgotPasswordScreen({ onBack, onSuccess }: Props) {
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center p-6 text-brandText">
-      <div className="w-full max-w-sm bg-white/60 border border-white/20 rounded-card p-6 shadow-sm space-y-6">
-        <div className="text-center space-y-2">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-brandText">
+      <div className="w-full max-w-sm space-y-6 rounded-card border border-white/20 bg-white/60 p-6 shadow-sm">
+        <div className="space-y-2 text-center">
           <h2 className="text-lg font-semibold">パスワードの再設定</h2>
           <p className="text-xs text-brandMuted">
             登録したメールアドレスを入力してください。
@@ -51,7 +51,7 @@ export default function ForgotPasswordScreen({ onBack, onSuccess }: Props) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-brandAccentAlt rounded-card px-3 py-2 text-sm"
+              className="w-full rounded-card border border-brandAccentAlt px-3 py-2 text-sm"
               placeholder="example@email.com"
             />
           </div>
@@ -61,7 +61,7 @@ export default function ForgotPasswordScreen({ onBack, onSuccess }: Props) {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full py-3 bg-brandAccent text-white rounded-button text-sm disabled:opacity-50 hover:bg-brandAccentHover transition-colors"
+            className="w-full rounded-button bg-brandAccent py-3 text-sm text-white transition-colors hover:bg-brandAccentHover disabled:opacity-50"
           >
             {loading ? "確認中..." : "次へ"}
           </button>
@@ -70,7 +70,7 @@ export default function ForgotPasswordScreen({ onBack, onSuccess }: Props) {
         <div className="text-center">
           <button
             onClick={onBack}
-            className="text-sm text-brandAccent hover:opacity-80 transition-opacity underline"
+            className="text-sm text-brandAccent underline transition-opacity hover:opacity-80"
           >
             ログイン画面に戻る
           </button>

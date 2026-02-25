@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import PostCard from "../components/PostCard";
 import { CommunityPost } from "../types/community";
 import { useStorage } from "../hooks/useStorage";
+import PageHeader from "../components/layout/PageHeader";
 
 type Visibility = "public" | "private";
 type VisibilityFilter = "all" | Visibility;
@@ -73,27 +74,17 @@ export default function DiaryScreen({
   ];
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center p-6 text-brandText">
-      <div className="w-full max-w-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="text-sm text-brandAccent hover:opacity-80 transition-opacity"
-          >
-            ← コミュニティ
-          </button>
-          <div className="text-md font-semibold">日記</div>
-          <div className="w-10" />
-        </div>
-
-        <div className="bg-white/60 border border-white/20 rounded-card p-4 shadow-sm space-y-3">
+    <div className="min-h-screen bg-gray-50 text-brandText">
+      <PageHeader title="日記" onBack={onBack} />
+      <main className="mx-auto max-w-screen-md space-y-6 px-4 pb-10 pt-20 md:px-8 md:pt-24">
+        <div className="space-y-3 rounded-card border border-white/20 bg-white/60 p-4 shadow-sm">
           <div className="text-sm font-semibold">日記の検索・絞り込み</div>
-          <div className="pt-1 space-y-3">
+          <div className="space-y-3 pt-1">
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full border border-brandAccentAlt rounded-card px-3 py-2 text-sm"
+              className="w-full rounded-card border border-brandAccentAlt px-3 py-2 text-sm"
               placeholder="キーワードで検索..."
             />
             <div className="flex gap-2">
@@ -101,7 +92,7 @@ export default function DiaryScreen({
                 <button
                   key={value}
                   onClick={() => setVisibilityFilter(value)}
-                  className={`flex-1 py-2 rounded-button border text-xs ${
+                  className={`flex-1 rounded-button border py-2 text-xs ${
                     visibilityFilter === value
                       ? "bg-brandAccent text-white"
                       : "bg-brandInput text-brandText"
@@ -136,12 +127,12 @@ export default function DiaryScreen({
             />
           ))}
           {filteredPosts.length === 0 && (
-            <div className="text-xs text-brandMuted text-center py-8">
+            <div className="py-8 text-center text-xs text-brandMuted">
               {posts.length > 0 ? "条件に合う日記がありません。" : "まだ日記がありません。"}
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

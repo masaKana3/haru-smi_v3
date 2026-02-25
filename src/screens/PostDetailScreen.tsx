@@ -38,16 +38,22 @@ export default function PostDetailScreen({ postId, onBack, onEdit, onDeleted, cu
 
   if (!post) {
     return (
-      <div className="w-full min-h-screen flex flex-col items-center p-6 text-brandText">
-        <div className="w-full max-w-sm bg-white/60 border border-white/20 rounded-card p-6 shadow-sm space-y-4">
-          <button
-            onClick={onBack}
-            className="text-sm text-brandAccent hover:opacity-80 transition-opacity"
-          >
-            ← コミュニティ
-          </button>
-          <div className="text-sm text-brandMuted">投稿の読み込み中か、見つかりませんでした。</div>
-        </div>
+      <div className="min-h-screen bg-gray-50 text-brandText">
+        <header className="sticky top-0 z-50 w-full bg-[#D4829A] text-white shadow-md">
+          <div className="relative mx-auto flex h-14 max-w-screen-md items-center justify-center px-4 md:h-16 md:px-8">
+            <div className="absolute left-4 md:left-8">
+              <button onClick={onBack} className="text-sm transition-opacity hover:opacity-80">
+                戻る
+              </button>
+            </div>
+            <h1 className="text-lg font-semibold md:text-xl">投稿</h1>
+          </div>
+        </header>
+        <main className="mx-auto w-full max-w-screen-md px-4 pb-10 pt-20 md:px-8 md:pt-24">
+          <div className="rounded-card border border-white/20 bg-white/60 p-6 text-center text-sm text-brandMuted shadow-sm">
+            投稿の読み込み中か、見つかりませんでした。
+          </div>
+        </main>
       </div>
     );
   }
@@ -136,72 +142,75 @@ export default function PostDetailScreen({ postId, onBack, onEdit, onDeleted, cu
   const isAuthor = post.user_id === currentUserId;
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center p-6 text-brandText">
-      <div className="w-full max-w-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="text-sm text-brandAccent hover:opacity-80 transition-opacity"
-          >
-            ← コミュニティ
-          </button>
-          <div className="text-md font-semibold">
-            {post.title || (post.type === "diary" ? "日記" : "投稿")}
-          </div>
-          {isAuthor ? (
-            <div className="flex items-center gap-2">
-              <button onClick={onEdit} className="text-xs text-brandAccent underline">
-                編集
-              </button>
-              <button onClick={handleDeletePost} className="text-xs text-red-500 underline">
-                削除
-              </button>
-            </div>
-          ) : (
-            <button onClick={handleReportPost} className="text-xs text-brandMuted underline">
-              通報
+    <div className="min-h-screen bg-gray-50 text-brandText">
+      <header className="sticky top-0 z-50 w-full bg-[#D4829A] text-white shadow-md">
+        <div className="relative mx-auto flex h-14 max-w-screen-md items-center justify-between px-4 md:h-16 md:px-8">
+          <div className="absolute left-4 md:left-8">
+            <button onClick={onBack} className="text-sm transition-opacity hover:opacity-80">
+              戻る
             </button>
-          )}
+          </div>
+          <h1 className="flex-1 truncate px-16 text-center text-lg font-semibold md:text-xl">
+            {post.title || (post.type === "diary" ? "日記" : "投稿")}
+          </h1>
+          <div className="absolute right-4 md:right-8">
+            {isAuthor ? (
+              <div className="flex items-center gap-2">
+                <button onClick={onEdit} className="text-xs underline">
+                  編集
+                </button>
+                <button onClick={handleDeletePost} className="text-xs text-red-300 underline">
+                  削除
+                </button>
+              </div>
+            ) : (
+              <button onClick={handleReportPost} className="text-xs underline">
+                通報
+              </button>
+            )}
+          </div>
         </div>
-
-        <div className="bg-white/60 border border-white/20 rounded-card p-4 shadow-sm space-y-2">
+      </header>
+      
+      <main className="mx-auto w-full max-w-screen-md space-y-4 px-4 pb-10 pt-20 md:px-8 md:pt-24">
+        <div className="space-y-2 rounded-card border border-white/20 bg-white/60 p-4 shadow-sm">
           <div className="flex items-center justify-between text-xs text-brandMuted">
             <span>{post.type === "diary" ? "日記" : "テーマ投稿"}</span>
-            <span className="px-2 py-[2px] bg-brandAccentAlt/20 rounded-full text-[11px]">
+            <span className="rounded-full bg-brandAccentAlt/20 px-2 py-[2px] text-[11px]">
               {post.is_public ? "公開" : "非公開"}
             </span>
           </div>
           <div className="text-base font-semibold text-brandText">
             {post.title || "タイトルなし"}
           </div>
-          <div className="text-sm text-brandText leading-relaxed whitespace-pre-line">
+          <div className="whitespace-pre-line text-sm leading-relaxed text-brandText">
             {post.content}
           </div>
           <div className="flex items-center justify-between text-xs text-brandMuted">
             <span>{toRelativeTime(post.created_at)}</span>
             <button
               onClick={handleLikePost}
-              className={`text-xs hover:opacity-80 transition-opacity ${likes.userHasLiked ? 'text-brandAccent font-bold' : 'text-brandMuted'}`}
+              className={`text-xs transition-opacity hover:opacity-80 ${likes.userHasLiked ? 'font-bold text-brandAccent' : 'text-brandMuted'}`}
             >
               ❤️ {likes.count}
             </button>
           </div>
         </div>
 
-        <div className="bg-white/60 border border-white/20 rounded-card p-4 shadow-sm space-y-3">
+        <div className="space-y-3 rounded-card border border-white/20 bg-white/60 p-4 shadow-sm">
           <div className="text-sm font-semibold">コメント</div>
 
           <div className="flex items-start gap-2">
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              className="flex-1 border border-brandAccentAlt rounded-card px-3 py-2 text-sm min-h-[80px]"
+              className="min-h-[80px] flex-1 rounded-card border border-brandAccentAlt px-3 py-2 text-sm"
               placeholder="コメントを入力"
               ref={inputRef}
             />
             <button
               onClick={handleAddComment}
-              className="text-xs px-3 py-2 bg-brandAccent text-white rounded-button hover:bg-brandAccentHover transition-colors"
+              className="rounded-button bg-brandAccent px-3 py-2 text-xs text-white transition-colors hover:bg-brandAccentHover"
             >
               送信
             </button>
@@ -224,7 +233,7 @@ export default function PostDetailScreen({ postId, onBack, onEdit, onDeleted, cu
             )}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
