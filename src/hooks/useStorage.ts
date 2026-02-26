@@ -118,12 +118,13 @@ export function useStorage() {
     const user = authData.user;
     if (!user) return;
 
-    // 1. daily_checks テーブルに日々の体調を保存
-    const { error: dailyCheckError } = await (supabase.from("daily_checks") as any)
+    // 1. daily_checks への保存 (変更なし)
+    const { error: dailyCheckError } = await supabase
+      .from("daily_checks")
       .upsert({
         user_id: user.id,
         date: data.date,
-        answers: (data.answers as unknown) as Json,
+        answers: data.answers as Json,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,date' });
     
@@ -131,63 +132,83 @@ export function useStorage() {
       console.error("Failed to save daily record to Supabase:", dailyCheckError);
     }
 
-    // 2. isPeriod フラグに応じて periods テーブルを更新
+    // 2. isPeriod フラグに応じた periods テーブルの更新 (マージロジック)
     if (data.isPeriod === true) {
-      // isPeriod:true なら、アクティブな生理期間を開始または維持する
-      // a. 既にアクティブなレコードがあるか確認
-      const { data: activePeriod, error: fetchError } = await supabase
+      // 日付操作のヘルパー
+      const addDays = (dateStr: string, days: number): string => {
+        const date = new Date(dateStr);
+        date.setDate(date.getDate() + days);
+        return date.toISOString().slice(0, 10);
+      };
+
+      const today = data.date;
+      const searchMargin = 7; // 前後7日間をマージ対象とする
+      const searchStartDate = addDays(today, -searchMargin);
+      const searchEndDate = addDays(today, searchMargin);
+
+      // a. マージ候補となる近接期間を取得
+      const { data: nearbyPeriods, error: fetchError } = await supabase
         .from('periods')
-        .select('id')
+        .select('id, start, end, is_active')
         .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-      
-      if (fetchError) {
-        console.error('Error fetching active period:', fetchError);
-        return;
-      }
-      
-      // b. アクティブなレコードがなければ、新しい生理期間を開始する
-      if (!activePeriod) {
-        const { error: insertError } = await supabase
-          .from('periods')
-          .insert({
-            user_id: user.id,
-            start: data.date,
-            is_active: true,
-            // end は NULL のまま
-          });
-        if (insertError) console.error("Failed to insert new active period:", insertError);
-      }
-      // c. 既にアクティブなものがあれば何もしない
-      
-    } else if (data.isPeriod === false) {
-      // isPeriod:false なら、アクティブな生理期間を終了させる
-      // a. 終了させるべきアクティブなレコードを特定
-      const { data: activePeriod, error: fetchError } = await supabase
-        .from('periods')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
+        .lte('start', searchEndDate) // 開始日が検索終了日より前で
+        .or(`end.gte.${searchStartDate},end.is.null`); // 終了日が検索開始日より後か、または終了日がNULL
 
       if (fetchError) {
-        console.error('Error fetching active period for closing:', fetchError);
+        console.error('Error fetching nearby periods for merging:', fetchError);
         return;
       }
-      
-      // b. アクティブなレコードがあれば、それを更新して閉じる
-      if (activePeriod) {
-        const { error: updateError } = await supabase
-          .from('periods')
-          .update({
-            is_active: false,
-            end: data.date,
-          })
-          .eq('id', activePeriod.id);
-        if (updateError) console.error("Failed to close active period:", updateError);
+
+      if (nearbyPeriods && nearbyPeriods.length > 0) {
+        // b. マージ処理
+        const allDates: string[] = [today];
+        const idsToDelete: string[] = [];
+        let isMergedPeriodActive = false;
+
+        nearbyPeriods.forEach(p => {
+          allDates.push(p.start);
+          if (p.end) allDates.push(p.end);
+          idsToDelete.push(p.id);
+          if (p.is_active || !p.end) {
+            isMergedPeriodActive = true;
+          }
+        });
+
+        allDates.sort(); // 日付を昇順にソート
+
+        const newStart = allDates[0];
+        const newEnd = isMergedPeriodActive ? null : allDates[allDates.length - 1];
+        
+        // c. 古いレコードを削除
+        const { error: deleteError } = await supabase.from('periods').delete().in('id', idsToDelete);
+        if (deleteError) {
+          console.error('Error deleting old periods for merging:', deleteError);
+          return; // 削除に失敗したら挿入に進まない
+        }
+        
+        // d. マージした新しいレコードを1つ作成
+        const { error: insertError } = await supabase.from('periods').insert({
+            user_id: user.id,
+            start: newStart,
+            end: newEnd,
+            is_active: isMergedPeriodActive,
+        });
+        if (insertError) console.error("Failed to insert merged period:", insertError);
+
+      } else {
+        // e. マージ対象がない場合は、新しいアクティブな期間として作成
+        const { error: insertError } = await supabase.from('periods').insert({
+            user_id: user.id,
+            start: today,
+            is_active: true,
+        });
+        if (insertError) console.error("Failed to insert new active period:", insertError);
       }
-      // c. 終了させるべきアクティブ期間がなければ何もしない
+      
+    } else if (data.isPeriod === false) {
+      // isPeriod:false の場合、期間の自動分割は複雑なため、今回は何もしない。
+      // これにより、ユーザーが期間の途中の1日だけを間違えてOFFにしても、期間が分断・短縮されるのを防ぐ。
+      // 期間の終了は、将来的にカレンダーUIなどで明示的に行うのが望ましい。
     }
   }, []);
 

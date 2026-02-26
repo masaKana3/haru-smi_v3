@@ -206,6 +206,7 @@ export default function AppNavigator({
           onBack={() => nav.navigate("dashboard")}
           latestPeriod={latestPeriod}
           allDailyRecords={historyRecords}
+          allPeriodRecords={allPeriodRecords}
         />
       )}
 

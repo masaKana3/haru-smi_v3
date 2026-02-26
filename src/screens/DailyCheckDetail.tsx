@@ -137,40 +137,46 @@ export default function DailyCheckDetail({
   const [isDailyOpen, setIsDailyOpen] = useState(true);
   const [isOtherOpen, setIsOtherOpen] = useState(false);
 
-  // 初期データロード（haru_periods と DailyRecord の同期）
+  // 初期データロード
   useEffect(() => {
-    // 1. 生理記録の確認
-    const list = JSON.parse(localStorage.getItem("haru_periods") || "[]") as PeriodRecord[];
-    const periodRecord = list.find((r) => r.start === effectiveData.date);
-
-    setLocalAnswers(effectiveData.answers);
-
-    if (periodRecord) {
-      setIsPeriodLocal(true);
-      setBleeding(periodRecord.bleeding);
-      setSymptoms(periodRecord.symptoms);
-      // メモは PeriodRecord にあればそれを優先、なければ DailyRecord
-      setMemo(periodRecord.memo || effectiveData.memo || "");
+    const initialData: DailyRecord = data || {
+      date: selectedDate,
+      answers: {},
+      items: [],
+      isPeriod: false,
+      memo: "",
+    };
+    
+    // 1. 生理記録の同期
+    // ローカルの isPeriod フラグを初期化
+    setIsPeriodLocal(!!initialData.isPeriod);
+    
+    // answers.bleeding をローカルの bleeding state に反映
+    const bleedingAnswer = initialData.answers.bleeding;
+    if (bleedingAnswer === "少ない" || bleedingAnswer === "普通" || bleedingAnswer === "多い") {
+      setBleeding(bleedingAnswer);
     } else {
-      setIsPeriodLocal(!!effectiveData.isPeriod);
-      // answers.bleeding を反映
-      const ans = effectiveData.answers.bleeding;
-      if (ans === "少ない" || ans === "普通" || ans === "多い") {
-        setBleeding(ans as PeriodBleedingLevel);
-      } else {
-        setBleeding("無い");
-      }
-      setMemo(effectiveData.memo || "");
+      setBleeding("無い");
     }
 
+    // symptoms は DailyRecord には直接ないので、ここでは初期化しない
+    // 必要であれば answers から変換するロジックを追加
+
     // 2. 体温の確認
-    setTemperature(effectiveData.answers.temperature || "");
+    setTemperature(initialData.answers.temperature || "");
 
     // 3. その他項目の確認
-    setHospitalVisit(effectiveData.answers.hospital_visit === "true");
-    setMedicationChange(effectiveData.answers.medication_change === "true");
-    setBloodTestNote((effectiveData.answers.blood_test_note as string) || "");
-  }, [effectiveData]);
+    setHospitalVisit(initialData.answers.hospital_visit === "true");
+    setMedicationChange(initialData.answers.medication_change === "true");
+    setBloodTestNote((initialData.answers.blood_test_note as string) || "");
+
+    // 4. メモ
+    setMemo(initialData.memo || "");
+
+    // 5. DailyCheckの回答
+    setLocalAnswers(initialData.answers);
+
+  }, [data, selectedDate]);
 
   const handleSelect = (key: string, value: DailyAnswerValue | string) => {
     setLocalAnswers(prev => ({ ...prev, [key]: value }));
@@ -405,35 +411,7 @@ export default function DailyCheckDetail({
           {/* ▼ 保存ボタン */}
           <button
             onClick={() => {
-              // 1. haru_periods の更新（同期）
-              // This logic should ideally be in `useStorage` as well, but for now we keep it
-              const list = JSON.parse(localStorage.getItem("haru_periods") || "[]") as PeriodRecord[];
-              let nextList = [...list];
-
-              if (isPeriodLocal) {
-                if (bleeding === "無い") {
-                  alert("生理中は出血量を選択してください。");
-                  return;
-                }
-                const idx = nextList.findIndex((r) => r.start === effectiveData.date);
-                
-                if (idx >= 0) {
-                  nextList[idx] = { ...nextList[idx], bleeding: bleeding as PeriodBleedingLevel, symptoms, memo };
-                } else {
-                  nextList.push({
-                    start: effectiveData.date,
-                    bleeding: bleeding as PeriodBleedingLevel,
-                    symptoms,
-                    memo,
-                  });
-                  nextList.sort((a, b) => (a.start > b.start ? -1 : 1));
-                }
-              } else {
-                nextList = nextList.filter((r) => r.start !== effectiveData.date);
-              }
-              localStorage.setItem("haru_periods", JSON.stringify(nextList));
-
-              // 2. DailyRecord の保存
+              // DailyRecord の保存データを作成
               const finalAnswers = { ...localAnswers };
               if (temperature) finalAnswers.temperature = temperature;
               finalAnswers.bleeding = bleeding;
@@ -448,7 +426,7 @@ export default function DailyCheckDetail({
               else delete finalAnswers.blood_test_note;
               
               const recordToSave: DailyRecord = {
-                ...effectiveData,
+                date: selectedDate,
                 isPeriod: isPeriodLocal,
                 answers: finalAnswers,
                 memo: memo,

@@ -6,21 +6,23 @@ import { getOrGenerateRecipe } from "../logic/advice/recipeSuggestion";
 import { fetchWeather, WeatherData, WeatherError } from "../api/weather";
 import { useStorage } from "../hooks/useStorage";
 import { SMIRecord } from "../types/smi";
-import { getCyclePhase, PhaseInfo } from "../logic/core/periodPrediction";
+import { getCyclePhase, PhaseInfo, predictNextPeriod, PredictionResult } from "../logic/core/periodPrediction";
 import { useInsightData } from "../hooks/useInsightData"; // パス確認: src/hooks/useInsightData.ts
 import DailyReport from "../components/insight/DailyReport"; // パス確認: src/components/insight/DailyReport.tsx
 import WeeklyReport from "../components/insight/WeeklyReport"; // パス確認: src/components/insight/WeeklyReport.tsx
 import MonthlyReport from "../components/insight/MonthlyReport"; // パス確認: src/components/insight/MonthlyReport.tsx
 import PageHeader from "../components/layout/PageHeader";
+import PeriodStatusCard from "../components/period/PeriodStatusCard";
 
 type Props = {
   todayDaily: DailyRecord | null;
   onBack: () => void;
   latestPeriod?: PeriodRecord | null;
   allDailyRecords?: DailyRecord[];
+  allPeriodRecords: PeriodRecord[];
 };
 
-export default function InsightScreen({ todayDaily, onBack, latestPeriod, allDailyRecords }: Props) {
+export default function InsightScreen({ todayDaily, onBack, latestPeriod, allDailyRecords, allPeriodRecords }: Props) {
   const storage = useStorage();
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [weatherError, setWeatherError] = useState<WeatherError | null>(null);
@@ -29,11 +31,33 @@ export default function InsightScreen({ todayDaily, onBack, latestPeriod, allDai
   const [recipeLoading, setRecipeLoading] = useState<boolean>(false);
   const [smiHistory, setSmiHistory] = useState<SMIRecord[]>([]);
   const [dailyHistory, setDailyHistory] = useState<DailyRecord[]>([]);
-  const [phaseInfo, setPhaseInfo] = useState<PhaseInfo | null>(null);
+  const [periodPrediction, setPeriodPrediction] = useState<PredictionResult | null>(null);
+  const [currentPhase, setCurrentPhase] = useState<PhaseInfo | null>(null);
   const [activeTab, setActiveTab] = useState<"daily" | "weekly" | "monthly">("daily");
 
   // カスタムフックでデータ計算
   const { todayLabel, chartData, periodRanges, weekDates, weeklyData, monthlyData } = useInsightData(dailyHistory, todayDaily);
+
+  useEffect(() => {
+    const loadPrediction = async () => {
+      const result = predictNextPeriod(allPeriodRecords);
+      setPeriodPrediction(result);
+    };
+    loadPrediction();
+  }, [allPeriodRecords]);
+
+  // ▼ 最新の生理記録から現在のフェーズを計算
+  useEffect(() => {
+    // 1. DBから取得した最新の生理記録が 'is_active' なら、それを最優先で「月経期」と判断
+    if (latestPeriod?.is_active === true) {
+      setCurrentPhase({ phase: 'menstrual', dayInCycle: 1 });
+      return;
+    }
+
+    // 2. アクティブな期間でなければ、通常の周期計算ロジックを実行
+    const info = getCyclePhase(latestPeriod, allPeriodRecords);
+    setCurrentPhase(info);
+  }, [latestPeriod, allPeriodRecords]);
 
   // -------------------------
   // 天気データ取得
@@ -139,27 +163,14 @@ export default function InsightScreen({ todayDaily, onBack, latestPeriod, allDai
     load();
   }, [storage, allDailyRecords]);
 
-  // -------------------------
-  // 生理周期フェーズ取得
-  // -------------------------
-  useEffect(() => {
-    const load = async () => {
-      if (latestPeriod !== undefined) {
-        const info = getCyclePhase(latestPeriod?.start || null);
-        setPhaseInfo(info);
-        return;
-      }
-      const fetchedPeriod = await storage.getLatestPeriod();
-      const info = getCyclePhase(fetchedPeriod?.start || null);
-      setPhaseInfo(info);
-    };
-    load();
-  }, [storage, latestPeriod]);
-
   return (
     <div className="min-h-screen text-brandText">
       <PageHeader title="分析・アドバイス" onBack={onBack} />
-      <main className="mx-auto max-w-screen-md px-4 pb-28 pt-20 md:px-8 md:pt-24">
+      <main className="mx-auto max-w-screen-md px-4 pb-28 pt-20 md:px-8 md:pt-24 space-y-4">
+        <PeriodStatusCard
+            periodPrediction={periodPrediction}
+            currentPhase={currentPhase}
+        />
         <div className="space-y-4 rounded-card border border-white/20 bg-white/70 p-4 shadow-sm md:p-6">
           <div className="text-right text-xs text-brandMuted">{todayLabel}</div>
           {/* タブ切り替え */}
@@ -185,7 +196,7 @@ export default function InsightScreen({ todayDaily, onBack, latestPeriod, allDai
             todayDaily?.answers ? (
               <DailyReport
                 todayDaily={todayDaily}
-                phaseInfo={phaseInfo}
+                phaseInfo={currentPhase}
                 smiHistory={smiHistory}
                 chartData={chartData}
                 periodRanges={periodRanges}
