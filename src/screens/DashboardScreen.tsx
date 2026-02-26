@@ -27,7 +27,7 @@ const PHASE_STYLES: Record<string, { label: string; color: string; advice: strin
     color: "bg-sky-100 text-sky-700 border-sky-200",
     advice: "心身ともに好調！新しい挑戦を。",
   },
-  ovulation: {
+  ovulatory: {
     label: "排卵期",
     color: "bg-emerald-100 text-emerald-700 border-emerald-200",
     advice: "前向きな気持ちで過ごせそう。",
@@ -53,6 +53,7 @@ type Props = {
   onOpenThread: (topicId: string) => void;
   onOpenSettings: () => void;
   latestPeriod: PeriodRecord | null;
+  allPeriodRecords: PeriodRecord[];
 };
 
 function buildSummaryText(preferred?: string | null, fallback?: string | null) {
@@ -94,6 +95,7 @@ export default function DashboardScreen({
   onOpenThread,
   onOpenSettings,
   latestPeriod,
+  allPeriodRecords,
  }: Props) {
   const storage = useStorage();
   const [username, setUsername] = useState("ユーザー");
@@ -197,22 +199,24 @@ export default function DashboardScreen({
 
   useEffect(() => {
     const loadPrediction = async () => {
-      const history = await storage.loadAllPeriods();
-      const result = predictNextPeriod(history);
+      const result = predictNextPeriod(allPeriodRecords);
       setPeriodPrediction(result);
     };
     loadPrediction();
-  }, [storage, latestPeriod]); // latestPeriodが変わったら再計算
+  }, [allPeriodRecords]);
 
   // ▼ 最新の生理記録から現在のフェーズを計算
   useEffect(() => {
-    if (latestPeriod) {
-      const info = getCyclePhase(latestPeriod.start);
-      setCurrentPhase(info);
-    } else {
-      setCurrentPhase(null);
+    // 1. DBから取得した最新の生理記録が 'is_active' なら、それを最優先で「月経期」と判断
+    if (latestPeriod?.is_active === true) {
+      setCurrentPhase({ phase: 'menstrual', dayInCycle: 1 });
+      return;
     }
-  }, [latestPeriod]);
+
+    // 2. アクティブな期間でなければ、通常の周期計算ロジックを実行
+    const info = getCyclePhase(latestPeriod, allPeriodRecords);
+    setCurrentPhase(info);
+  }, [latestPeriod, allPeriodRecords]); // 依存配列から todayDaily を削除
 
   // スコア表示用の安全な値（NaN対策）
   const safeTotal =
@@ -223,6 +227,11 @@ export default function DashboardScreen({
   const handleSelectDate = (date: string) => {
     onSelectDate(date);
   };
+
+  console.log("--- 生理カード診断 (is_active対応版) ---");
+  console.log("① latestPeriod:", latestPeriod);
+  console.log("② latestPeriod.is_active:", latestPeriod?.is_active);
+  console.log("③ currentPhase の中身:", currentPhase);
 
   return (
     <div className="min-h-screen text-brandText">
@@ -261,6 +270,50 @@ export default function DashboardScreen({
             initialMonth={initialMonth}
             // prediction={predictionForCalendar} // 将来的にカレンダー側が対応したら有効化
           />
+
+          {/* 生理周期予測カード */}
+          <Card className="flex flex-col gap-4 p-4">
+            {(periodPrediction?.nextPeriodDate || currentPhase) ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="mb-1 text-xs text-brandMuted">次の生理予定日</div>
+                    <div className="text-lg font-bold text-brandText">
+                      {periodPrediction?.nextPeriodDate
+                        ? formatJPDate(periodPrediction.nextPeriodDate)
+                        : "データ収集中"}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="mb-1 text-xs text-brandMuted">あと</div>
+                    <div className="text-xl font-bold text-brandAccent">
+                      {(periodPrediction?.daysUntilNext !== null && typeof periodPrediction?.daysUntilNext !== 'undefined')
+                        ? (periodPrediction.daysUntilNext < 0 ? "超過" : `${periodPrediction.daysUntilNext}日`)
+                        : "---"}
+                    </div>
+                  </div>
+                </div>
+
+                {currentPhase && PHASE_STYLES[currentPhase.phase] && (
+                  <div className="flex items-center gap-3 pt-2">
+                    <span className={`rounded-full border px-2 py-1 text-[10px] font-bold ${PHASE_STYLES[currentPhase.phase].color}`}>
+                      {PHASE_STYLES[currentPhase.phase].label}
+                    </span>
+                    <span className="text-xs text-brandText">
+                      {PHASE_STYLES[currentPhase.phase].advice}
+                    </span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div>
+                <div className="mb-1 text-sm font-semibold text-brandText">生理周期予測</div>
+                <p className="text-xs text-brandMuted">
+                  生理の記録を追加すると、次の生理日や周期の傾向が表示されます。
+                </p>
+              </div>
+            )}
+          </Card>
 
           {/* 現在の更年期指数カード（円グラフ） ※カレンダー直下に移動 */}
           <Card
@@ -304,45 +357,8 @@ export default function DashboardScreen({
           <Card
             as="button"
             onClick={onOpenInsight}
-            className="flex w-full flex-col gap-4 p-4 text-left shadow-sm transition-colors hover:bg-gray-50 border border-brandAccentAlt/20"
+            className="flex w-full flex-col gap-2 p-4 text-left shadow-sm transition-colors hover:bg-gray-50"
           >
-            {/* 上段：生理予測情報（データがある場合のみ） */}
-            {periodPrediction && periodPrediction.nextPeriodDate && (
-              <>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="mb-1 text-xs text-brandMuted">次の生理予定日</div>
-                    <div className="text-lg font-bold text-brandText">
-                      {formatJPDate(periodPrediction.nextPeriodDate)}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="mb-1 text-xs text-brandMuted">あと</div>
-                    <div className="text-xl font-bold text-brandAccent">
-                      {periodPrediction.daysUntilNext !== null && periodPrediction.daysUntilNext < 0
-                        ? "予定日超過"
-                        : periodPrediction.daysUntilNext}
-                      <span className="ml-1 text-sm font-normal text-brandText">日</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 中段：フェーズ情報 */}
-                {currentPhase && PHASE_STYLES[currentPhase.phase] && (
-                  <div className="flex items-center gap-3">
-                    <span className={`rounded-full border px-2 py-1 text-[10px] font-bold ${PHASE_STYLES[currentPhase.phase].color}`}>
-                      {PHASE_STYLES[currentPhase.phase].label}
-                    </span>
-                    <span className="text-xs text-brandText">
-                      {PHASE_STYLES[currentPhase.phase].advice}
-                    </span>
-                  </div>
-                )}
-
-                <div className="border-t border-dashed border-brandAccentAlt/30" />
-              </>
-            )}
-
             {/* 下段：今日の総合アドバイス */}
             <div>
               <div className="mb-2 flex items-center justify-between">

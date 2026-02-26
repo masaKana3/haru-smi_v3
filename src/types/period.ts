@@ -13,7 +13,9 @@ export interface PeriodSymptoms {
 
 export interface PeriodRecord {
   start: string;
-  bleeding: PeriodBleedingLevel;
-  symptoms: PeriodSymptoms;
+  end?: string | null;
+  is_active?: boolean;
+  bleeding?: PeriodBleedingLevel;
+  symptoms?: PeriodSymptoms;
   memo?: string;
 }

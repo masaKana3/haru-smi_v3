@@ -29,6 +29,7 @@ type Props = {
   dailyItems: DailyQuestion[];
   historyRecords: DailyRecord[];
   latestPeriod: PeriodRecord | null;
+  allPeriodRecords: PeriodRecord[];
   selectedDate: string;
   currentUserId: string;
   onFinishSMI: (total: number, answers: SMIConvertedAnswer[]) => void;
@@ -48,6 +49,7 @@ export default function AppNavigator({
   dailyItems,
   historyRecords,
   latestPeriod,
+  allPeriodRecords,
   selectedDate,
   currentUserId,
   onFinishSMI,
@@ -89,6 +91,7 @@ export default function AppNavigator({
           onOpenThread={communityNav.handleOpenThread}
           onOpenSettings={() => nav.navigate("settings")}
           latestPeriod={latestPeriod}
+          allPeriodRecords={allPeriodRecords}
         />
       )}
 

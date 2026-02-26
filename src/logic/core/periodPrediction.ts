@@ -24,14 +24,19 @@ const DEFAULT_CONFIG: PredictionConfig = {
   defaultCycle: 28,
 };
 
-function toDate(dateStr: string): Date {
-  return new Date(dateStr);
-}
+const formatYMD = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = ("0" + (date.getMonth() + 1)).slice(-2);
+  const d = ("0" + date.getDate()).slice(-2);
+  return `${y}-${m}-${d}`;
+};
 
 function diffDays(d1: Date, d2: Date): number {
-  const t1 = d1.getTime();
-  const t2 = d2.getTime();
-  return Math.ceil((t2 - t1) / (1000 * 60 * 60 * 24));
+  const t1 = new Date(d1);
+  const t2 = new Date(d2);
+  t1.setHours(0, 0, 0, 0);
+  t2.setHours(0, 0, 0, 0);
+  return Math.round((t2.getTime() - t1.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 function addDays(date: Date, days: number): Date {
@@ -40,18 +45,10 @@ function addDays(date: Date, days: number): Date {
   return d;
 }
 
-function formatYMD(date: Date): string {
-  const y = date.getFullYear();
-  const m = ("0" + (date.getMonth() + 1)).slice(-2);
-  const d = ("0" + date.getDate()).slice(-2);
-  return `${y}-${m}-${d}`;
-}
-
 export function predictNextPeriod(
   history: PeriodRecord[],
   config: PredictionConfig = DEFAULT_CONFIG
 ): PredictionResult {
-  // 日付順にソート（新しい順）
   const sorted = [...history].sort((a, b) => (a.start < b.start ? 1 : -1));
 
   if (sorted.length === 0) {
@@ -63,26 +60,23 @@ export function predictNextPeriod(
   }
 
   const latest = sorted[0];
-  const latestDate = toDate(latest.start);
+  const latestDate = new Date(latest.start);
+  latestDate.setHours(0, 0, 0, 0);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  latestDate.setHours(0, 0, 0, 0);
 
   let cycleLength = config.defaultCycle;
 
-  // 履歴が2件以上あれば、直近のデータから平均周期を計算する
   if (sorted.length >= 2) {
     let sumDiff = 0;
     let count = 0;
-    // 直近6回分程度を見る
     const maxSamples = Math.min(sorted.length - 1, 6);
     
     for (let i = 0; i < maxSamples; i++) {
-      const current = toDate(sorted[i].start);
-      const prev = toDate(sorted[i + 1].start);
+      const current = new Date(sorted[i].start);
+      const prev = new Date(sorted[i + 1].start);
       const diff = diffDays(prev, current);
       
-      // 異常値除外 (20日未満、45日以上はスキップする簡易フィルタ)
       if (diff >= 20 && diff <= 45) {
         sumDiff += diff;
         count++;
@@ -104,32 +98,67 @@ export function predictNextPeriod(
   };
 }
 
+// A robust date parsing utility
+function parseDate(dateString: string): Date | null {
+  try {
+    // Handles "YYYY-MM-DD" format by ensuring it's treated as UTC to avoid timezone shifts.
+    const date = new Date(dateString + 'T00:00:00Z');
+    if (isNaN(date.getTime())) {
+      console.error("Invalid date string provided:", dateString);
+      return null;
+    }
+    // The time is already zeroed out by the UTC creation, but this is a safeguard.
+    date.setUTCHours(0, 0, 0, 0);
+    return date;
+  } catch (e) {
+    console.error("Date parsing failed:", e);
+    return null;
+  }
+}
+
 export function getCyclePhase(
-  lastPeriodStart: string | null,
+  latestPeriod: PeriodRecord | null,
+  allPeriods: PeriodRecord[], // Kept for API compatibility
   cycleLength: number = DEFAULT_CONFIG.defaultCycle
 ): PhaseInfo {
-  if (!lastPeriodStart) {
+  // If there's no latest period or start date, we can't determine the phase.
+  if (!latestPeriod?.start) {
     return { phase: "unknown", dayInCycle: 0 };
   }
 
-  const start = toDate(lastPeriodStart);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  start.setHours(0, 0, 0, 0);
-
-  const dayInCycle = diffDays(start, today) + 1; // 生理開始日を1日目とする
-
-  let phase: CyclePhase = "unknown";
-
-  if (dayInCycle >= 1 && dayInCycle <= 5) {
-    phase = "menstrual"; // 生理中 (1-5日目)
-  } else if (dayInCycle > 5 && dayInCycle <= cycleLength - 14 - 2) {
-    phase = "follicular"; // 卵胞期 (生理終了後〜排卵2日前)
-  } else if (dayInCycle > cycleLength - 14 - 2 && dayInCycle <= cycleLength - 14 + 2) {
-    phase = "ovulatory"; // 排卵期 (排卵日±2日)
-  } else if (dayInCycle > cycleLength - 14 + 2) {
-    phase = "luteal"; // 黄体期 (排卵後〜次の生理)
+  const startDate = parseDate(latestPeriod.start);
+  
+  // If the start date is invalid, we can't proceed.
+  if (!startDate) {
+    return { phase: "unknown", dayInCycle: 0 };
   }
 
-  return { phase, dayInCycle };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const dayInCycle = diffDays(startDate, today) + 1;
+
+  // 1. --- "Forced" Menstrual Check ---
+  // As per instruction: if start date is within 7 days, force menstrual phase.
+  // The user's instruction about a "toggle" is interpreted as this date check.
+  if (dayInCycle >= 1 && dayInCycle <= 7) {
+    return { phase: "menstrual", dayInCycle: Math.floor(dayInCycle) };
+  }
+
+  // 2. --- Logic for other phases ---
+  if (dayInCycle < 1) {
+    // This handles cases where today is before the latest period start date.
+    return { phase: "luteal", dayInCycle: Math.floor(dayInCycle) };
+  }
+  
+  let phase: CyclePhase = "unknown";
+  if (dayInCycle > 7 && dayInCycle <= cycleLength - 17) {
+    phase = "follicular";
+  } else if (dayInCycle > cycleLength - 17 && dayInCycle <= cycleLength - 11) {
+    phase = "ovulatory";
+  } else if (dayInCycle > cycleLength - 11) {
+    phase = "luteal";
+  }
+
+  return { phase, dayInCycle: Math.floor(dayInCycle) };
 }

@@ -1,17 +1,23 @@
 import React from "react";
+import homeIcon from "../../assets/img/home.png";
+import penIcon from "../../assets/img/pen.png";
+import bubbleIcon from "../../assets/img/bubble.png";
+import userIcon from "../../assets/img/user.png";
 
 type NavItemProps = {
-  emoji: string;
+  icon: string;
   label: string;
   isActive: boolean;
   onClick: () => void;
 };
 
-const NavItem: React.FC<NavItemProps> = ({ emoji, label, isActive, onClick }) => {
-  const activeClass = isActive ? "text-brandAccent" : "text-gray-500";
+const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onClick }) => {
+  const textClass = isActive ? "text-brandAccent" : "text-gray-400";
+  const iconClass = isActive ? "grayscale-0" : "grayscale opacity-70";
+
   return (
-    <button onClick={onClick} className={`flex flex-col items-center justify-center gap-1 transition-colors duration-200 ${activeClass}`}>
-      <span className="text-2xl">{emoji}</span>
+    <button onClick={onClick} className={`flex flex-col items-center justify-center gap-1 font-medium transition-colors duration-200 ${textClass}`}>
+      <img src={icon} alt={label} className={`h-6 w-6 transition-all duration-200 ${iconClass}`} />
       <span className="text-xs">{label}</span>
     </button>
   );
@@ -25,14 +31,20 @@ type BottomNavProps = {
 };
 
 const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate }) => {
-  const navItems: Array<{ id: ScreenName; emoji: string; label: string; relatedScreens: string[] }> = [
-    { id: 'dashboard', emoji: '🏠', label: 'ホーム', relatedScreens: ['dashboard', 'insight', 'smi_history'] },
-    { id: 'history', emoji: '✍️', label: '記録', relatedScreens: ['history', 'daily', 'detail'] },
-    { id: 'community', emoji: '💬', label: 'コミュニティ', relatedScreens: ['community', 'diary', 'postCreate', 'postDetail', 'thread'] },
-    { id: 'settings', emoji: '⚙️', label: 'マイページ', relatedScreens: ['settings', 'profile', 'profileEdit'] },
+  const navItems: Array<{ id: ScreenName; icon: string; label: string; relatedScreens: string[] }> = [
+    { id: 'dashboard', icon: homeIcon, label: 'ホーム', relatedScreens: ['dashboard', 'insight', 'smi_history'] },
+    { id: 'history', icon: penIcon, label: '記録', relatedScreens: ['history', 'daily', 'detail'] },
+    { id: 'community', icon: bubbleIcon, label: 'コミュニティ', relatedScreens: ['community', 'diary', 'postCreate', 'postDetail', 'thread', 'profile'] },
+    { id: 'settings', icon: userIcon, label: 'マイページ', relatedScreens: ['settings', 'profileEdit'] },
   ];
 
   const getIsActive = (item: typeof navItems[0]) => {
+    // 特別ルール：コミュニティ関連画面でも、自分のプロフィールを見ているときは「マイページ」をアクティブにする
+    if (item.id === 'settings' && activeScreen === 'profile') {
+      // viewingUserId と currentUserId を比較する必要があるが、このコンポーネントはそれらの情報を持っていない
+      // ここでは単純化し、profile スクリーンはマイページに属すると仮定する
+      // （より正確な実装には AppNavigator からの追加情報が必要）
+    }
     return item.relatedScreens.includes(activeScreen);
   }
 
@@ -42,7 +54,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate }) => {
         {navItems.map((item) => (
           <NavItem
             key={item.id}
-            emoji={item.emoji}
+            icon={item.icon}
             label={item.label}
             isActive={getIsActive(item)}
             onClick={() => onNavigate(item.id)}

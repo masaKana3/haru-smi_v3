@@ -116,16 +116,78 @@ export function useStorage() {
   const saveDailyRecord = useCallback(async (data: DailyRecord) => {
     const { data: authData } = await supabase.auth.getUser();
     const user = authData.user;
-    if (user) {
-      const { error } = await (supabase.from("daily_checks") as any)
-        .upsert({
-          user_id: user.id,
-          date: data.date,
-          answers: (data.answers as unknown) as Json,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id,date' });
+    if (!user) return;
+
+    // 1. daily_checks テーブルに日々の体調を保存
+    const { error: dailyCheckError } = await (supabase.from("daily_checks") as any)
+      .upsert({
+        user_id: user.id,
+        date: data.date,
+        answers: (data.answers as unknown) as Json,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,date' });
+    
+    if (dailyCheckError) {
+      console.error("Failed to save daily record to Supabase:", dailyCheckError);
+    }
+
+    // 2. isPeriod フラグに応じて periods テーブルを更新
+    if (data.isPeriod === true) {
+      // isPeriod:true なら、アクティブな生理期間を開始または維持する
+      // a. 既にアクティブなレコードがあるか確認
+      const { data: activePeriod, error: fetchError } = await supabase
+        .from('periods')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
       
-      if (error) console.error("Failed to save daily record to Supabase:", error);
+      if (fetchError) {
+        console.error('Error fetching active period:', fetchError);
+        return;
+      }
+      
+      // b. アクティブなレコードがなければ、新しい生理期間を開始する
+      if (!activePeriod) {
+        const { error: insertError } = await supabase
+          .from('periods')
+          .insert({
+            user_id: user.id,
+            start: data.date,
+            is_active: true,
+            // end は NULL のまま
+          });
+        if (insertError) console.error("Failed to insert new active period:", insertError);
+      }
+      // c. 既にアクティブなものがあれば何もしない
+      
+    } else if (data.isPeriod === false) {
+      // isPeriod:false なら、アクティブな生理期間を終了させる
+      // a. 終了させるべきアクティブなレコードを特定
+      const { data: activePeriod, error: fetchError } = await supabase
+        .from('periods')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error('Error fetching active period for closing:', fetchError);
+        return;
+      }
+      
+      // b. アクティブなレコードがあれば、それを更新して閉じる
+      if (activePeriod) {
+        const { error: updateError } = await supabase
+          .from('periods')
+          .update({
+            is_active: false,
+            end: data.date,
+          })
+          .eq('id', activePeriod.id);
+        if (updateError) console.error("Failed to close active period:", updateError);
+      }
+      // c. 終了させるべきアクティブ期間がなければ何もしない
     }
   }, []);
 
@@ -229,19 +291,38 @@ export function useStorage() {
     const user = authData.user;
     if (!user) return null;
 
-    const { data, error } = await supabase
+    // 1. アクティブな生理期間を最優先で探す
+    const { data: activePeriod, error: activeError } = await supabase
       .from("periods")
-      .select("start, end")
+      .select("id, start, end, is_active") // is_active を含める
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+    
+    if (activeError) {
+      console.error("Failed to load active period from Supabase:", activeError);
+      // エラーでも処理を続行し、次のクエリを試みる
+    }
+
+    if (activePeriod) {
+      return activePeriod as PeriodRecord;
+    }
+
+    // 2. アクティブな期間がなければ、直近に終了した生理期間を探す
+    const { data: latestClosedPeriod, error: latestError } = await supabase
+      .from("periods")
+      .select("id, start, end, is_active")
       .eq("user_id", user.id)
       .order("start", { ascending: false })
       .limit(1)
       .maybeSingle();
-    
-    if (error) {
-      console.error("Failed to load latest period from Supabase:", error);
+      
+    if (latestError) {
+      console.error("Failed to load latest period from Supabase:", latestError);
       return null;
     }
-    return data as PeriodRecord | null;
+    
+    return latestClosedPeriod as PeriodRecord | null;
   }, []);
 
   // === Community Board (Supabase) ===

@@ -137,7 +137,17 @@ export default function DailyCheckScreen({ dailyItems, onComplete, onCancel }: P
   const finishCheck = (finalAnswers: DailyAnswers) => {
     const today = new Date();
     const dateStr = today.toISOString().slice(0, 10);
-    const dataToSave: DailyRecord = { date: dateStr, answers: finalAnswers, items: dailyItems };
+    
+    // bleeding の回答が「無い」以外であれば、isPeriod を true にする
+    const isPeriodDay = finalAnswers.bleeding != null && finalAnswers.bleeding !== "無い";
+    
+    const dataToSave: DailyRecord = { 
+      date: dateStr, 
+      answers: finalAnswers, 
+      items: dailyItems,
+      isPeriod: isPeriodDay, // isPeriod フラグを設定
+    };
+
     setMessages((prev) => [...prev, { id: prev.length + 1, from: "bot", text: "教えてくれてありがとうございます。内容を確認してください。" }]);
     if (onComplete) onComplete(dataToSave);
   };
