@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
+import HaruRogo from '../assets/img/Haru_rogo.png';
 
 type Props = {
   onSuccess: () => void;
@@ -32,6 +33,7 @@ export default function SignupScreen({ onSuccess, onCancel }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 text-brandText">
+      <img src={HaruRogo} alt="Haru Logo" className="w-1/2 max-w-[200px] mb-6" />
       <div className="w-full max-w-sm rounded-card border border-white/20 bg-white/70 p-8 shadow-sm">
         <h2 className="text-center text-xl font-semibold">新規登録</h2>
 

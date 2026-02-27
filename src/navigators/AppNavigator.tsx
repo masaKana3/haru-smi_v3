@@ -113,6 +113,7 @@ export default function AppNavigator({
           readOnly={selectedDate > new Date().toISOString().slice(0, 10)}
           onBack={() => nav.goBack("dashboard")}
           onSave={onSaveDaily}
+          allPeriodRecords={allPeriodRecords}
         />
       )}
 

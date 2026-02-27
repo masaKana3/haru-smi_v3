@@ -206,9 +206,45 @@ export function useStorage() {
       }
       
     } else if (data.isPeriod === false) {
-      // isPeriod:false の場合、期間の自動分割は複雑なため、今回は何もしない。
-      // これにより、ユーザーが期間の途中の1日だけを間違えてOFFにしても、期間が分断・短縮されるのを防ぐ。
-      // 期間の終了は、将来的にカレンダーUIなどで明示的に行うのが望ましい。
+      // isPeriod:false の場合、該当する日付を含むアクティブな期間を終了させる
+      const today = data.date;
+      const addDays = (dateStr: string, days: number): string => {
+        const date = new Date(dateStr);
+        date.setDate(date.getDate() + days);
+        return date.toISOString().slice(0, 10);
+      };
+      const dayBefore = addDays(today, -1);
+
+      // 今日を開始日とするアクティブな期間を探す
+      const { data: activePeriod, error: fetchError } = await supabase
+        .from('periods')
+        .select('id, start')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .lte('start', today);
+      
+      if (fetchError) {
+        console.error('Error fetching active period to end:', fetchError);
+        return;
+      }
+
+      if (activePeriod && activePeriod.length > 0) {
+        // 該当する期間が見つかった場合
+        for (const p of activePeriod) {
+          if (p.start === today) {
+            // 開始日当日にOFFにした場合は、そのレコードを削除
+            const { error: deleteError } = await supabase.from('periods').delete().eq('id', p.id);
+            if (deleteError) console.error("Failed to delete period record:", deleteError);
+          } else {
+            // 期間の途中または終了日をOFFにした場合は、期間を終了させる
+            const { error: updateError } = await supabase
+              .from('periods')
+              .update({ end: dayBefore, is_active: false })
+              .eq('id', p.id);
+            if (updateError) console.error("Failed to end period:", updateError);
+          }
+        }
+      }
     }
   }, []);
 

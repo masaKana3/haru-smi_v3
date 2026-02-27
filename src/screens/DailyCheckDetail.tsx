@@ -34,6 +34,35 @@ const LABELS: Record<string, string> = {
   temperature: "基礎体温",
 };
 
+// --- Helper function ---
+// 指定された日付が生理期間に含まれるかチェックする
+const isDateInPeriods = (date: string, periods: PeriodRecord[]): boolean => {
+  if (!periods) return false;
+  const targetDate = new Date(date);
+  // 時差を考慮して、日付の比較はUTCで行う
+  targetDate.setUTCHours(0, 0, 0, 0);
+
+  for (const period of periods) {
+    const startDate = new Date(period.start);
+    startDate.setUTCHours(0, 0, 0, 0);
+
+    // 終了日がない（is_active: true）または、終了日が未来の場合
+    if (period.end === null || period.end === undefined) {
+      if (targetDate >= startDate) {
+        return true;
+      }
+    } else {
+      const endDate = new Date(period.end);
+      endDate.setUTCHours(0, 0, 0, 0);
+      if (targetDate >= startDate && targetDate <= endDate) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
+
 type Props = {
   data: DailyRecord | null;
   selectedDate: string;
@@ -41,6 +70,7 @@ type Props = {
   readOnly?: boolean;
   onBack: () => void;
   onSave: (record: DailyRecord) => void;
+  allPeriodRecords: PeriodRecord[];
 };
 
 export default function DailyCheckDetail({
@@ -49,6 +79,7 @@ export default function DailyCheckDetail({
   isToday,
   onBack,
   onSave,
+  allPeriodRecords,
 }: Props) {
   const storage = useStorage();
 
@@ -61,7 +92,6 @@ export default function DailyCheckDetail({
     date: selectedDate,
     answers: {},
     items: [],
-    isPeriod: false,
     memo: "",
   };
 
@@ -114,7 +144,6 @@ export default function DailyCheckDetail({
   //------------------------------------------------------------
   // ② 今日または過去の日付：編集フォーム
   //------------------------------------------------------------
-  const answers = effectiveData.answers;
   
   // State管理
   const [isPeriodLocal, setIsPeriodLocal] = useState<boolean>(false);
@@ -143,13 +172,13 @@ export default function DailyCheckDetail({
       date: selectedDate,
       answers: {},
       items: [],
-      isPeriod: false,
       memo: "",
     };
     
     // 1. 生理記録の同期
-    // ローカルの isPeriod フラグを初期化
-    setIsPeriodLocal(!!initialData.isPeriod);
+    // periodsテーブルの情報を正としてトグルの状態を決定
+    const isInPeriod = isDateInPeriods(selectedDate, allPeriodRecords);
+    setIsPeriodLocal(isInPeriod);
     
     // answers.bleeding をローカルの bleeding state に反映
     const bleedingAnswer = initialData.answers.bleeding;
@@ -176,7 +205,7 @@ export default function DailyCheckDetail({
     // 5. DailyCheckの回答
     setLocalAnswers(initialData.answers);
 
-  }, [data, selectedDate]);
+  }, [data, selectedDate, allPeriodRecords]);
 
   const handleSelect = (key: string, value: DailyAnswerValue | string) => {
     setLocalAnswers(prev => ({ ...prev, [key]: value }));
@@ -408,41 +437,47 @@ export default function DailyCheckDetail({
             </div>
           )}
 
-          {/* ▼ 保存ボタン */}
-          <button
-            onClick={() => {
-              // DailyRecord の保存データを作成
-              const finalAnswers = { ...localAnswers };
-              if (temperature) finalAnswers.temperature = temperature;
-              finalAnswers.bleeding = bleeding;
+          {/* ▼ ボタンエリア */}
+          <div className="mt-8 space-y-3">
+            <button
+              onClick={() => {
+                // DailyRecord の保存データを作成
+                const finalAnswers = { ...localAnswers };
+                if (temperature) finalAnswers.temperature = temperature;
+                finalAnswers.bleeding = bleeding;
 
-              if (hospitalVisit) finalAnswers.hospital_visit = "true";
-              else delete finalAnswers.hospital_visit;
+                if (hospitalVisit) finalAnswers.hospital_visit = "true";
+                else delete finalAnswers.hospital_visit;
 
-              if (medicationChange) finalAnswers.medication_change = "true";
-              else delete finalAnswers.medication_change;
+                if (medicationChange) finalAnswers.medication_change = "true";
+                else delete finalAnswers.medication_change;
 
-              if (bloodTestNote) finalAnswers.blood_test_note = bloodTestNote;
-              else delete finalAnswers.blood_test_note;
-              
-              const recordToSave: DailyRecord = {
-                date: selectedDate,
-                isPeriod: isPeriodLocal,
-                answers: finalAnswers,
-                memo: memo,
-              };
+                if (bloodTestNote) finalAnswers.blood_test_note = bloodTestNote;
+                else delete finalAnswers.blood_test_note;
+                
+                const recordToSave: DailyRecord = {
+                  date: selectedDate,
+                  isPeriod: isPeriodLocal, // このフラグを saveDailyRecord に渡して periods テーブルを更新
+                  answers: finalAnswers,
+                  memo: memo,
+                };
 
-              onSave(recordToSave);
-              alert("記録を保存しました！");
-            }}
-            className="mt-6 w-full rounded-button bg-brandAccent py-3 text-white transition-colors hover:bg-brandAccentHover"
-          >
-            保存する
-          </button>
-
+                onSave(recordToSave);
+                alert("記録を更新しました！");
+              }}
+              className="w-full rounded-button bg-brandAccent py-3 text-white transition-colors hover:bg-brandAccentHover"
+            >
+              この内容で更新する
+            </button>
+            <button
+              onClick={onBack}
+              className="w-full rounded-button bg-transparent py-3 text-brandMuted underline transition-colors hover:text-brandAccent"
+            >
+              ホームへ戻る
+            </button>
+          </div>
         </div>
       </main>
     </div>
   );
 }
-

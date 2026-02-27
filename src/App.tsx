@@ -187,7 +187,7 @@ export default function App() {
                         setAllPeriodRecords(updatedAllPeriods);
                       
                         setSelectedDate(data.date);
-                        nav.navigate("dashboard");
+                        nav.navigate("detail");
                       };          // プロフィール画面への遷移
           const handleOpenProfile = (userId: string) => {
             setViewingUserId(userId);

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import HaruRogo from '../assets/img/Haru_rogo.png';
 
 type Props = {
   onLoginSuccess: (userId: string) => void;
@@ -40,6 +41,7 @@ export default function LoginScreen({ onLoginSuccess, onGoToSignup, onForgotPass
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 text-brandText">
+      <img src={HaruRogo} alt="Haru Logo" className="w-1/2 max-w-[200px] mb-6" />
       <div className="w-full max-w-sm space-y-6 rounded-card border border-white/20 bg-white/70 p-6 shadow-sm">
         <div className="space-y-2 text-center">
           <h2 className="text-lg font-semibold">ログイン</h2>
