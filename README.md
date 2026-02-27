@@ -1,31 +1,25 @@
-# 🌸 Haru SMI – Prototype / v0.9
+# 🌸 Haru SMI – Prototype / v3.0 (Supabase Edition)
 
-**Haru SMI** は更年期世代の女性に向けた  
-「日々のコンディション記録 × AIアドバイス × コミュニティ」アプリです。
-
-本リポジトリは **20名規模のユーザーテスト用プロトタイプ**として構築されています。
+**Haru SMI** は更年期世代の女性に向けた「日々のコンディション記録 × AIアドバイス × コミュニティ」アプリです。
+本リポジトリは、**Supabaseをバックエンドに採用し、実運用を見据えたデータ構造を持つ最新プロトタイプ**です。
 
 ---
 
 ## 📌 主な機能
 
-### 1. 📝 ディリーチェック（SMIスコア形式）
-- 体調・気分・疲労・出血などの会話形式記録（カレンダーから遷移）
-- 生理日のトラッキング（カレンダーから遷移）
-- 気温・気圧取得（Open-Meteo APIにて自動取得）
-- 体調と気象データを用いた当日のアドバイス表示（現在はタグにて表示）
-- 将来は蓄積したデータを利用、統合して見える化し、パーソナライズ表示
+### 1. 📝 デイリー体調チェック
+- **対話型記録**: 体調・気分・疲労・出血量などをチャット形式で直感的に入力可能。
+- **生理トラッキング**: `is_active` フラグを用いた、遡り入力や期間自動結合に対応した高度な生理期間管理。
+- **気象連動**: Open-Meteo APIより気温・気圧を自動取得。
+- **フェーズ判定**: 生理周期データに基づき「月経期」「卵胞期」などを自動判定し、ダッシュボードに反映。
 
-### 2. 🍳 レシピ提案（現在はダミー表示）
-- 将来は **Gemini API** を用いて体調に合わせたレシピを生成
-- 現状は安全モードのため **固定メッセージ + 日付ごとに localStorage 保存**
+### 2. 🍳 レシピ・アドバイス提案（ロジック駆動）
+- **AIアドバイス（準備中）**: 現在はセキュリティ保護のため、内部ロジックによるアドバイスを提供。将来的に **Gemini API** を連携予定。
+- **パーソナライズ**: 蓄積されたSMIスコアや周期データに基づいた、個別最適化アドバイスの実装。
 
-### 3. 💬 コミュニティ（開発中）
-- 運営側が用意したテーマへの投稿
-- 日記投稿（公開 / 非公開）
-- コメント機能
-- いいね機能
-- localStorageベースで動作（将来は Firebase or Supabase への移行を検討）
+### 3. 💬 コミュニティ
+- **Supabase連携**: 投稿、コメント、いいね機能をPostgreSQLで永続化。
+- **日記機能**: ユーザーによる日記投稿（公開/非公開選択）に対応。
 
 ---
 
@@ -33,120 +27,49 @@
 
 | 種類 | 使用技術 |
 |------|-----------|
-| Frontend | React + TypeScript + Vite |
-| Styling | Tailwind CSS |
-| State/Logic | React Hooks / Custom Logic |
-| Build | Vite |
-| DB（現状） | localStorage（開発中のため簡易構成） |
-  ※以下検討中につき変更予定あり
-| Hosting（予定） | Firebase Hosting |
-| Backend（計画） | Firebase Functions or Supabase API |
+| Frontend | **React + TypeScript + Vite** |
+| Styling | **Tailwind CSS** |
+| Database | **Supabase (PostgreSQL)** |
+| Auth | **Supabase Auth** |
+| API | Open-Meteo API |
+| Hosting | Vercel |
 
 ---
 
-## 📂 ディレクトリ構造（概要）
-```
+## 📂 ディレクトリ構造（最新版）
+
 src/
-├ api/ // 天気API・GeminiレシピAPI（現在はダミー）
-├ components/ // UIコンポーネント（PostCard, CommentCardなど）
-├ logic/ // アドバイス生成ロジック・コミュニティロジック
-├ screens/ // 各画面（Dashboard, Insight, Community, PostDetail）
-├ types/ // TypeScriptの型定義
-├ main.tsx // Routing（react-router-dom）
-└ App.tsx
-```
----
-
-## 🔧 環境変数
-
-将来の Gemini API 利用を見据えて、下記の env を利用しています。
-```
-VITE_GEMINI_API_KEY=<your_key> // 現在は使用停止（ダミーモード）
-```
----
-
-## 🚀 セットアップ
-
-### 1. 依存関係のインストール
-```
-npm install
-```
-### 2. ローカル起動
-```
-npm run dev
-```
+├ api/        // 天気・Gemini(Dummy) API
+├ components/ // 共通部品（PeriodStatusCard等、再利用性を考慮した設計）
+├ hooks/      // useStorage(SupabaseへのCRUDロジックを集約)
+├ screens/    // Dashboard, Analysis, Login, DailyCheckDetail 等
+├ types/      // daily.ts, period.ts 等の厳密な型定義
+└ App.tsx     // 司令塔としてのState管理・Navigation
 
 ---
 
-## レシピ生成（現状仕様）
-- src/api/geminiRecipe.ts は現在 ダミー返却モードとして動作しています。
-- API呼び出しは無効化
-- ダミーレシピを返す
-- localStorage に recipe_YYYY-MM-DD の形式で保存
-- 将来の Gemini 復旧に備えて APIコードをコメントで保持
+## 🧪 生理周期管理の技術的アプローチ
+更年期の不規則な周期を正確に捉えるため、以下のロジックを独自実装しています。
+
+* **`periods` テーブルの活用**: `is_active` カラムにより「現在進行中のフェーズ」を明示的に管理。
+* **遡り入力・結合ロジック**: 過去日の記録時に既存レコードとの重複を確認し、`start` / `end` 日付を自動更新。
+* **Single Source of Truth**: 生理状態の正解を `periods` テーブルに集約し、各画面の不整合を排除。
 
 ---
 
-## 💬 コミュニティ機能（現状仕様）
-- 実証実験フェーズのため localStorageベースのミニSNS として動作：
-- 投稿 / コメント / いいね のCRUD
-- 運営テーマ（固定スレッド）
-- 日記投稿（公開/非公開の選択）
-- 投稿詳細画面（PostDetailScreen）でコメントが可能
-- 将来は Firebase または Supabase に移行予定。
+## 👥 技術相談・アドバイス歓迎
+本プロジェクトは個人開発による実証実験フェーズです。以下のテーマについて、技術者の方からのアドバイスをお待ちしています：
 
----
-
-## 🧪 実証実験での技術構成（GAS + スプレッドシート）
-
-本プロダクトの本番構成は Firebase / Supabase を想定していますが、  
-実証実験フェーズ（参加者20名規模）では下記の理由から **GAS（Google Apps Script）** を利用します。
-
-- コストを最小化するため
-- 簡易的なAPIサーバーとしてGAS Web APIを実装できる
-- 小規模のデータであればレスポンスが許容範囲
-- バックエンド構築の工数を削減し、UX検証に集中するため
-
-実験中は以下のデータを GAS で管理します：
-
-- 投稿データ（posts）
-- コメントデータ（comments）
-- いいねカウント
-- ログデータ（必要に応じて）
-
----
-
-## 🔥 今後の開発予定（技術検討中）
-- Firebase Authentication でのユーザー管理を検討
-- Firestore で投稿・コメント・日記を管理
-- Firebase Functions 経由で Gemini API を安全に呼び出す
-- スマホアプリ化（React Native or Flutter）
-
----
-
-## 🧪 実証実験（ユーザーテスト）について
-- 想定参加者：札幌市内在住or勤務の40代、50代の女性20名
-- 目的：UX調査・コミュニティ機能の体験検証、アウトカムの確認
-- テスト期間：約2週間
-- データ保存方法は検討中
-
----
-
-## 👥 開発・相談窓口（技術者向け）
-このプロジェクトは「個人開発 × 実証実験」の段階です。
-バックエンドやインフラ設計について技術的なアドバイスを歓迎しています。
-
-特に以下のテーマでサポートを求めています：
-
-- Firebase / Supabase 等を用いたDB設計
-- Gemini API の安全なサーバー側実装（Cloud Functions）
-- スマホアプリ化（Flutter / React Native）
-- 設計レビュー
+* `daily_checks` と `periods` のリレーショナルなDB設計の最適化
+* Supabase Edge Functions を用いた Gemini API の安全な呼び出し
+* React Native (Expo) への移行戦略と設計レビュー
 
 ---
 
 ## 📄 ライセンス
-実証実験用プロトタイプのため、現時点では非公開運用を前提とします。
+実証実験用プロトタイプのため、現時点では非公開運用を前提としています。
+
+---
 
 ## 備考
-本プロトタイプはAI駆動開発によるものです。
+本プロジェクトは、AI駆動開発（Vite + Supabase）を用いて構築されています。
