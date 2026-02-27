@@ -37,7 +37,7 @@
 ---
 
 ## 📂 ディレクトリ構造（最新版）
-
+```
 src/
 ├ api/        // 天気・Gemini(Dummy) API
 ├ components/ // 共通部品（PeriodStatusCard等、再利用性を考慮した設計）
@@ -45,6 +45,7 @@ src/
 ├ screens/    // Dashboard, Analysis, Login, DailyCheckDetail 等
 ├ types/      // daily.ts, period.ts 等の厳密な型定義
 └ App.tsx     // 司令塔としてのState管理・Navigation
+```
 
 ---
 
